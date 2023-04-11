@@ -55,5 +55,5 @@ void GF():{}
 
 void EXP():{}
 {
-    <NUM>
+    <NUM> <PLUS> 
 }
