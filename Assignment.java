@@ -17,6 +17,7 @@ public class Assignment implements AssignmentConstants {
   static final public void Start() throws ParseException {
     splitLines();
     jj_consume_token(0);
+    End();
 }
 
   static final public void splitLines() throws ParseException {
@@ -82,10 +83,9 @@ if (mainDefined) {
     EXP(param);
     jj_consume_token(SPACE);
     jj_consume_token(4);
-System.out.println(param);
 }
 
-  static final public void EXP(Token p) throws ParseException {
+  static final public void EXP(Token p) throws ParseException {Token exactParam;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case FUNCNAME:{
       FUNCCALL(p);
@@ -96,7 +96,10 @@ System.out.println(param);
       break;
       }
     case PARAM:{
-      jj_consume_token(PARAM);
+      exactParam = jj_consume_token(PARAM);
+if (!(exactParam.image).equals(p.image)){
+        {if (true) throw new ParseException("Expected parameter " + p.image + ", was given, " + exactParam.image);}
+    }
       break;
       }
     default:
@@ -140,7 +143,10 @@ System.out.println(param);
         break;
         }
       case PARAM:{
-        jj_consume_token(PARAM);
+        exactParam = jj_consume_token(PARAM);
+if (!(exactParam.image).equals(p.image)){
+        {if (true) throw new ParseException("Expected parameter was: " + p.image + ", was given: " + exactParam.image);}
+    }
         break;
         }
       default:
@@ -214,6 +220,7 @@ System.out.println(param);
     jj_consume_token(1);
     EXP(p);
     jj_consume_token(2);
+System.out.println(p);
 }
 
   static final public void FUNCCALLMAIN() throws ParseException {
@@ -221,6 +228,12 @@ System.out.println(param);
     jj_consume_token(1);
     EXPMAIN();
     jj_consume_token(2);
+}
+
+  static final public void End() throws ParseException {
+if (!mainDefined) {
+        {if (true) throw new ParseException("Main function must be defined");}
+    }
 }
 
   static private boolean jj_2_1(int xla)
@@ -231,16 +244,16 @@ System.out.println(param);
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3_1()
- {
-    if (jj_3R_GF_67_5_4()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_GF_67_5_4()
+  static private boolean jj_3R_GF_70_5_4()
  {
     if (jj_scan_token(FUNCNAME)) return true;
     if (jj_scan_token(SPACE)) return true;
+    return false;
+  }
+
+  static private boolean jj_3_1()
+ {
+    if (jj_3R_GF_70_5_4()) return true;
     return false;
   }
 

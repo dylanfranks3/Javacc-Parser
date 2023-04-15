@@ -15,6 +15,7 @@ public class Assignment {
     }
 }
 
+
 PARSER_END(Assignment)
 
 
@@ -34,9 +35,11 @@ TOKEN: {
     | <PARAM: (["a"-"z"])+> 
     | < EOL: "\n" > }
     
+
+
 void Start():{}
 
-{ splitLines() <EOF>
+{ splitLines() <EOF> End()
 
  }
     
@@ -68,13 +71,31 @@ void GF():{Token param;} //grammar for a general function
     param = <PARAM>
     <SPACE> "{" <SPACE> EXP(param) <SPACE> "}"
 
-    {System.out.println(param);}
+  
 }
 
-void EXP(Token p):{}  //this is whatever can be within the braces of func definition, the body of a function declaration. TODO, the body must contain parameters called in fun
-{
-    (FUNCCALL(p) | <NUM> | <PARAM> )
-    ( (<MULT> | <PLUS>) ( FUNCCALL(p) | <NUM> | <PARAM> ))*
+void EXP(Token p):{Token exactParam;  }  //this is whatever can be within the braces of func definition, the body of a function declaration. TODO, the body must contain parameters called in fun
+
+    
+{ 
+
+    (FUNCCALL(p) | <NUM> | exactParam = <PARAM>
+    
+    {if (!(exactParam.image).equals(p.image)){
+        throw new ParseException("Expected parameter " + p.image + ", was given, " + exactParam.image);
+    }}
+    )
+
+    
+    ( (<MULT> | <PLUS>) ( FUNCCALL(p) | <NUM> | exactParam = <PARAM> 
+
+    {if (!(exactParam.image).equals(p.image)){
+        throw new ParseException("Expected parameter was: " + p.image + ", was given: " + exactParam.image);
+    }}
+    ))*
+
+
+
 }
 
 void EXPMAIN():{}  //this is whatever can be within the braces of func definition, the body of a function declaration. TODO, the body must contain parameters called in fun
@@ -86,9 +107,17 @@ void EXPMAIN():{}  //this is whatever can be within the braces of func definitio
 void FUNCCALL(Token p):{} //this the syntax of a call to a function, which would be within the body of a function decl i.e foo(bar()*5)) 
 {
     <FUNCNAME> "(" EXP(p) ")"
+
+    {System.out.println(p);}
 }
 
 void FUNCCALLMAIN():{} //this the syntax of a call to a main function, which would be within the body of a function decl i.e foo(bar()*5)) 
 {
     <FUNCNAME> "(" EXPMAIN() ")"
+}
+
+void End():{}{
+    {if (!mainDefined) {
+        throw new ParseException("Main function must be defined");
+    }}
 }
