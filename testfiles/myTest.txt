@@ -1,1 +1,2 @@
-DEF ADDFOUR x { 4*y+4 } ;
+DEF ADDFOUR x { 4*x+4 } ;
+DEF FOO y { 0 } ;
