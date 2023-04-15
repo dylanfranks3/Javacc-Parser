@@ -1,10 +1,13 @@
 PARSER_BEGIN(Assignment)
 
 public class Assignment {
+    private static boolean mainDefined = false;
+    
     public static void main(String[] args) {
         try {
-            new Assignment(new java.io.StringReader(args[0])).Start();
-            System.out.println("Syntax is okay");
+            Assignment parser = new Assignment(System.in);
+            parser.Start();
+            System.out.println("Syntax is perfecto, well done sir");
         } catch (Throwable e) {
             // Catching Throwable is ugly but JavaCC throws Error objects!
             System.out.println("Syntax check failed: " + e.getMessage());
@@ -14,46 +17,78 @@ public class Assignment {
 
 PARSER_END(Assignment)
 
-SKIP: { "\t" | "\n" | "\r" }
+
 TOKEN: { 
-    "(" | ")" | "{" | "}" | ";" | "DEF" |
-    <MAIN: ("MAIN")> |
-    <NUM: (["1"-"9"])+(["0"-"9"])*> |
-    <PLUS: ("+")> | <MULT: ("*")> |
-    <SPACE: (" ")> | <FUNCNAME: (["A"-"Z"])+> |
-    <PARAM: (["a"-"z"])+> }
-   
-
-
-
-
-void Start():{}
-  {
-    F() <EOF>}
-
-void F(): {}  //this is to be able to seperate each line and determine whether it's a main func of general func (mf/gf resp.)
+    "(" 
+    | ")" 
+    | "{" 
+    | "}" 
+    | ";" 
+    | "DEF" 
+    | <MAIN: ("MAIN")> 
+    | <NUM: ((["1"-"9"])+(["0"-"9"])*) | "0">  //either a 0 or a positive number number 
+    | <PLUS: ("+")> 
+    | <MULT: ("*")> 
+    | <SPACE: (" ")> 
+    | <FUNCNAME: (["A"-"Z"])+> 
+    | <PARAM: (["a"-"z"])+> 
+    | < EOL: "\n" > }
     
-    {
-    WHICHFUNC() }
+void Start():{}
 
+{ splitLines() <EOF>
 
-void WHICHFUNC():{}
-
+ }
+    
+void splitLines():{} //this is to be able to separate each line and determine whether it's a main func of general func (mf/gf resp.)
 {
-   LOOKAHEAD(3)  "DEF" <SPACE> GF() | "DEF" <SPACE> MF()}
-
-void MF():{}
-
+    ("DEF" <SPACE> WHICHFUNC() <SPACE> ";" <EOL>)+
+}
+    
+void WHICHFUNC():{} //determining whether the line is a function def or a main def
 {
-    <MAIN> <SPACE> "{" <SPACE> EXP() <SPACE> "}" <SPACE> ";"}
+   LOOKAHEAD(2)   GF() |  MF()
+}
 
-void GF():{}
-
+void MF ():{} //grammar for the main function
 {
-   <FUNCNAME> <SPACE> <PARAM> <SPACE> "{" <SPACE> EXP() <SPACE> "}" <SPACE> ";"}
+    {   
+        if (mainDefined) {
+            throw new ParseException("Main function can only be defined once");
+        } else {
+            mainDefined = true;
+        }
+    }
+    <MAIN> <SPACE> "{" <SPACE> EXPMAIN() <SPACE> "}"
+}
 
-
-void EXP():{}
+void GF():{Token param;} //grammar for a general function
 {
-    <NUM> <PLUS> 
+    <FUNCNAME> <SPACE> 
+    param = <PARAM>
+    <SPACE> "{" <SPACE> EXP(param) <SPACE> "}"
+
+    {System.out.println(param);}
+}
+
+void EXP(Token p):{}  //this is whatever can be within the braces of func definition, the body of a function declaration. TODO, the body must contain parameters called in fun
+{
+    (FUNCCALL(p) | <NUM> | <PARAM> )
+    ( (<MULT> | <PLUS>) ( FUNCCALL(p) | <NUM> | <PARAM> ))*
+}
+
+void EXPMAIN():{}  //this is whatever can be within the braces of func definition, the body of a function declaration. TODO, the body must contain parameters called in fun
+{
+    (FUNCCALLMAIN() | <NUM> )
+    ( (<MULT> | <PLUS>) ( FUNCCALLMAIN() | <NUM> ))*
+}
+
+void FUNCCALL(Token p):{} //this the syntax of a call to a function, which would be within the body of a function decl i.e foo(bar()*5)) 
+{
+    <FUNCNAME> "(" EXP(p) ")"
+}
+
+void FUNCCALLMAIN():{} //this the syntax of a call to a main function, which would be within the body of a function decl i.e foo(bar()*5)) 
+{
+    <FUNCNAME> "(" EXPMAIN() ")"
 }

@@ -9,19 +9,21 @@ public interface AssignmentConstants {
   /** End of File. */
   int EOF = 0;
   /** RegularExpression Id. */
-  int MAIN = 10;
+  int MAIN = 7;
   /** RegularExpression Id. */
-  int NUM = 11;
+  int NUM = 8;
   /** RegularExpression Id. */
-  int PLUS = 12;
+  int PLUS = 9;
   /** RegularExpression Id. */
-  int MULT = 13;
+  int MULT = 10;
   /** RegularExpression Id. */
-  int SPACE = 14;
+  int SPACE = 11;
   /** RegularExpression Id. */
-  int FUNCNAME = 15;
+  int FUNCNAME = 12;
   /** RegularExpression Id. */
-  int PARAM = 16;
+  int PARAM = 13;
+  /** RegularExpression Id. */
+  int EOL = 14;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -29,9 +31,6 @@ public interface AssignmentConstants {
   /** Literal token values. */
   String[] tokenImage = {
     "<EOF>",
-    "\"\\t\"",
-    "\"\\n\"",
-    "\"\\r\"",
     "\"(\"",
     "\")\"",
     "\"{\"",
@@ -45,6 +44,7 @@ public interface AssignmentConstants {
     "\" \"",
     "<FUNCNAME>",
     "<PARAM>",
+    "\"\\n\"",
   };
 
 }
