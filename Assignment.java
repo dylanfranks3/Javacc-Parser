@@ -144,7 +144,7 @@ if (!(exactParam.image).equals(p.image)){
         }
       case PARAM:{
         exactParam = jj_consume_token(PARAM);
-if (!(exactParam.image).equals(p.image)){
+if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the same as the one mentioned in the func def
         {if (true) throw new ParseException("Expected parameter was: " + p.image + ", was given: " + exactParam.image);}
     }
         break;
