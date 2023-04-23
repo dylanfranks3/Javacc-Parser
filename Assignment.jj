@@ -1,19 +1,36 @@
 PARSER_BEGIN(Assignment)
 
+
+
 public class Assignment {
     private static boolean mainDefined = false;
-    
-    public static void main(String[] args) {
-        try {
-            Assignment parser = new Assignment(System.in);
-            parser.Start();
-            System.out.println("Syntax is perfecto, well done sir");
-        } catch (Throwable e) {
+    private static ParseException exceptionManager = generateParseException();
+
+    public static void main(String[] args) throws ParseException, TokenMgrError {
+
+            try{
+                Assignment parser = new Assignment(System.in);
+                parser.Start();
+                System.out.println("PASS");
+                System.out.println("TODO show result");
+                }
+
+            catch ( ParseException e){
+                System.out.println("FAIL");
+                System.err.println(e.getLocalizedMessage());
+                System.err.println(exceptionManager.toString());
+
+                }
+
+            catch (TokenMgrError e){
+                System.err.println(e.getLocalizedMessage() + " this was a tokenmgrerror!!!");
+            }
+
+        }     
             // Catching Throwable is ugly but JavaCC throws Error objects!
-            System.out.println("Syntax check failed: " + e.getMessage());
+           
         }
-    }
-}
+    
 
 
 PARSER_END(Assignment)
@@ -115,8 +132,9 @@ void FUNCCALLMAIN():{} //this the syntax of a call to a main function, which wou
     <FUNCNAME> "(" EXPMAIN() ")"
 }
 
-void End():{}{
+void End () throws ParseException:{}{
     {if (!mainDefined) {
-        throw new ParseException("Missing MAIN function");
-    }}
+        throw new ParseException("Missing MAIN function\n0");
+        }
+    }
 }
