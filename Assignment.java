@@ -43,7 +43,7 @@ public class Assignment implements AssignmentConstants {
                     //System.err.println(exceptionManager.toString());
                     errorMessage = intepretParseException(e);
                     System.err.println(errorMessage);
-                    System.err.println(e.getLocalizedMessage());
+                    System.err.println(e.currentToken.beginLine);
                 }
 
                 catch(TokenMgrError e) {
@@ -168,8 +168,9 @@ public class Assignment implements AssignmentConstants {
                     return "Unexpected end of file";
             }
 
-
+            System.out.println("\n" + "At: " + at + "\n" + "Found: " + found + "\n" + "Expected: " + expected.toString() + "\n");
             return "Unknown error";
+
     }
 
   static final public void Start() throws ParseException, ParseException {
@@ -403,11 +404,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_227_5_4()) return true;
+    if (jj_3R_GF_228_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_227_5_4()
+  static private boolean jj_3R_GF_228_5_4()
  {
     if (jj_scan_token(FUNCNAME)) return true;
     if (jj_scan_token(SPACE)) return true;

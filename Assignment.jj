@@ -43,7 +43,7 @@ public class Assignment {
                     //System.err.println(exceptionManager.toString());
                     errorMessage = intepretParseException(e);
                     System.err.println(errorMessage); 
-                    System.err.println(e.getLocalizedMessage());
+                    System.err.println(e.currentToken.beginLine);
                 } 
 
                 catch(TokenMgrError e) {
@@ -168,7 +168,7 @@ public class Assignment {
                     return "Unexpected end of file";
             }
 
-            System.out.println("\n" + "At: " + at "\n" + "Found: " + found + "\n" + "Expected: " + expected.toString() + "\n")
+            System.out.println("\n" + "At: " + at + "\n" + "Found: " + found + "\n" + "Expected: " + expected.toString() + "\n");
             return "Unknown error";
 
     }
