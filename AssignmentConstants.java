@@ -9,6 +9,18 @@ public interface AssignmentConstants {
   /** End of File. */
   int EOF = 0;
   /** RegularExpression Id. */
+  int LBRACKET = 1;
+  /** RegularExpression Id. */
+  int RBRACKET = 2;
+  /** RegularExpression Id. */
+  int LBRACE = 3;
+  /** RegularExpression Id. */
+  int RBRACE = 4;
+  /** RegularExpression Id. */
+  int SEMICOLON = 5;
+  /** RegularExpression Id. */
+  int DEF = 6;
+  /** RegularExpression Id. */
   int MAIN = 7;
   /** RegularExpression Id. */
   int NUM = 8;

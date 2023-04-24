@@ -1,2 +1,5 @@
-Missing MAIN function
-0
+MAIN definition should have no parameter
+Encountered " <PARAM> "g "" at line 3, column 10.
+Was expecting:
+    "{" ...
+    
