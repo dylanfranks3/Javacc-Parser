@@ -1,3 +1,2 @@
-Exception in thread "main" java.lang.NullPointerException: Cannot read field "image" because "<parameter1>.currentToken" is null
-	at Assignment.intepretParseException(Assignment.java:51)
-	at Assignment.main(Assignment.java:31)
+Cannot have consecutive spaces, invalid space
+1

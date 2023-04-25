@@ -45,27 +45,33 @@ public class Assignment {
                     lineNo = e.getLine(); // custom class method
                 } 
 
-                System.err.println(lineNo);
+                
                 System.err.println(errorMessage);
+                System.err.println(lineNo);
         
             // Catching Throwable is ugly but JavaCC throws Error objects!
             }
     }
 
         private static String intepretParseException(ParseException e) { // given a parse exception, take the token and give a helpful string representation of the error
-            String str = e.currentToken.image + e.currentToken.next.image + "...";
+            String str = e.currentToken.image + e.currentToken.next.image;
             int thisToken = e.currentToken.kind;
             int nextToken = e.currentToken.next.kind;
 
+            System.out.println(str);
             // Form the set of expected token kinds
             Set<Integer> expected = new HashSet();
             for (int[] i : e.expectedTokenSequences) {
                 expected.add(i[0]);
             }
 
+            System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
 
             // Determine an appropriate error message from the caught
             // tokens via case analysis
+            if (thisToken == SPACE && nextToken == EOL)
+                return "Unexpected EOL";
+
 
             if (nextToken == SPACE){
                 if (thisToken == SPACE){
@@ -77,7 +83,17 @@ public class Assignment {
             }
 
             if (expected.contains(DEF))
-                return "Missing keyword DEF";
+                if (thisToken == EOF && nextToken == EOF)
+                    return "Empty input";
+                else
+                    return "Missing keyword DEF";
+
+            if (( thisToken == FUNCNAME) && expected.contains(SPACE) && nextToken != SPACE)
+                return "Incorrect defintion of function, correct the formatting of the function name, instead recieved: " + str;
+
+            if ((thisToken == MAIN ) && expected.contains(SPACE) && nextToken != SPACE)
+                return "Incorrect defintion of MAIN, correct the formatting of the function name, instead recieved: " + str;
+/*
 
             if (expected.contains(SPACE)) {
                 switch (nextToken) {
@@ -90,12 +106,20 @@ public class Assignment {
                 }
             }
 
-            if (expected.contains(FUNCNAME) && expected.contains(MAIN)) {
+            */
+
+            if (expected.contains(MAIN) && expected.contains(FUNCNAME)) {
                 if (nextToken == DEF)
-                    return "DEF is not a valid function name";
+                    return "Cannot use DEF as a function name";
 
                 return "Missing function name";
             }
+            if ((thisToken == NUM || thisToken == PARAM ) && (expected.contains(PLUS) && expected.contains(MULT) && expected.contains(SPACE)))
+                return "Invalid expression inside function definition, expected an operation or an ending of the function definition, was given: " + str;
+
+            if ((thisToken == MULT || thisToken == PLUS ) && (expected.contains(PARAM) && expected.contains(SPACE) && expected.contains(FUNCNAME)))
+                return "Invalid expression next to operation inside function definition, was given: " + str;
+                 
 
             if ((thisToken == FUNCNAME || thisToken == MAIN) && expected.contains(SPACE))
                 return "Invalid function name " + str;
@@ -131,8 +155,6 @@ public class Assignment {
 
                 } else if (thisToken == SPACE) {
                     switch (nextToken) {
-                        case RBRACE:
-                        case EOL:
                         case EOF:
                             return "Function definition missing expression";
                 
@@ -141,8 +163,6 @@ public class Assignment {
             }
 
             switch (thisToken) {
-                case NUM:
-                case PARAM:
                 case FUNCNAME:
                     if (nextToken == PLUS || nextToken == MULT) {
                         return "Missing operand " + str;
@@ -150,13 +170,13 @@ public class Assignment {
             }
 
             if (expected.contains(RBRACKET))
-                return "Missing a )";
+                return "Missing a ) ";
 
             if (expected.contains(RBRACE))
-                return "Missing a }";
+                return "Expecting a } and instead recieved: " + str;
 
             if (expected.contains(SEMICOLON))
-                return "Missing a;";
+                return "Expecting a ; and instead recieved: " + str;
 
             switch (nextToken) {
                 case EOL:
@@ -165,13 +185,13 @@ public class Assignment {
                     return "Unexpected end of file";
             }
 
-            System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
+            
             return "Unknown error";
 
     }
 }
 
-class CustomErrorMessage extends Exception {
+class CustomErrorMessage extends Throwable {
     private String message;
     private int line;
    
@@ -220,12 +240,21 @@ void Start() throws ParseException,CustomErrorMessage:{}
     
 void splitLines() throws ParseException,CustomErrorMessage:{} //this is to be able to separate each line and determine whether it's a main func of general func (mf/gf resp.)
 {
-    (<DEF> <SPACE> WHICHFUNC() <SPACE> <SEMICOLON> <EOL>)+
+    (<DEF> <SPACE> (<MAIN> MF() | <FUNCNAME> GF()) <SPACE> <SEMICOLON> <EOL>)+
 }
     
 void WHICHFUNC() throws ParseException,CustomErrorMessage:{} //determining whether the line is a function def or a main def
 {
    LOOKAHEAD(2)   GF() |  MF()
+}
+
+void GF() throws ParseException, CustomErrorMessage:{Token param;} //grammar for a general function
+{
+    <SPACE> 
+    param = <PARAM>
+    <SPACE> <LBRACE> <SPACE> EXP(param) <SPACE> <RBRACE>
+
+  
 }
 
 void MF() throws ParseException, CustomErrorMessage:{} //grammar for the main function
@@ -237,17 +266,10 @@ void MF() throws ParseException, CustomErrorMessage:{} //grammar for the main fu
             mainDefined = true;
         }
     }
-    <MAIN> <SPACE> <LBRACE> <SPACE> EXPMAIN() <SPACE> <RBRACE>
+    <SPACE> <LBRACE> <SPACE> EXPMAIN() <SPACE> <RBRACE>
 }
 
-void GF() throws ParseException, CustomErrorMessage:{Token param;} //grammar for a general function
-{
-    <FUNCNAME> <SPACE> 
-    param = <PARAM>
-    <SPACE> <LBRACE> <SPACE> EXP(param) <SPACE> <RBRACE>
 
-  
-}
 
 void EXP(Token p) throws ParseException, CustomErrorMessage :{Token exactParam;  }  //this is whatever can be within the braces of func definition, the body of a function declaration. TODO, the body must contain parameters called in fun
 
@@ -292,7 +314,7 @@ void FUNCCALLMAIN() throws ParseException,CustomErrorMessage:{} //this the synta
 
 void End () throws ParseException,CustomErrorMessage:{}{
     {if (!mainDefined) {
-        throw new ParseException("Missing MAIN function\n0");
+        throw new CustomErrorMessage("Missing MAIN function",0);
         }
     }
 }

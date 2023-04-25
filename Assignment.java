@@ -45,27 +45,33 @@ public class Assignment implements AssignmentConstants {
                     lineNo = e.getLine(); // custom class method
                 }
 
-                System.err.println(lineNo);
+
                 System.err.println(errorMessage);
+                System.err.println(lineNo);
 
             // Catching Throwable is ugly but JavaCC throws Error objects!
             }
     }
 
         private static String intepretParseException(ParseException e) { // given a parse exception, take the token and give a helpful string representation of the error
-            String str = e.currentToken.image + e.currentToken.next.image + "...";
+            String str = e.currentToken.image + e.currentToken.next.image;
             int thisToken = e.currentToken.kind;
             int nextToken = e.currentToken.next.kind;
 
+            System.out.println(str);
             // Form the set of expected token kinds
             Set<Integer> expected = new HashSet();
             for (int[] i : e.expectedTokenSequences) {
                 expected.add(i[0]);
             }
 
+            System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
 
             // Determine an appropriate error message from the caught
             // tokens via case analysis
+            if (thisToken == SPACE && nextToken == EOL)
+                return "Unexpected EOL";
+
 
             if (nextToken == SPACE){
                 if (thisToken == SPACE){
@@ -77,7 +83,17 @@ public class Assignment implements AssignmentConstants {
             }
 
             if (expected.contains(DEF))
-                return "Missing keyword DEF";
+                if (thisToken == EOF && nextToken == EOF)
+                    return "Empty input";
+                else
+                    return "Missing keyword DEF";
+
+            if (( thisToken == FUNCNAME) && expected.contains(SPACE) && nextToken != SPACE)
+                return "Incorrect defintion of function, correct the formatting of the function name, instead recieved: " + str;
+
+            if ((thisToken == MAIN ) && expected.contains(SPACE) && nextToken != SPACE)
+                return "Incorrect defintion of MAIN, correct the formatting of the function name, instead recieved: " + str;
+/*
 
             if (expected.contains(SPACE)) {
                 switch (nextToken) {
@@ -90,12 +106,20 @@ public class Assignment implements AssignmentConstants {
                 }
             }
 
-            if (expected.contains(FUNCNAME) && expected.contains(MAIN)) {
+            */
+
+            if (expected.contains(MAIN) && expected.contains(FUNCNAME)) {
                 if (nextToken == DEF)
-                    return "DEF is not a valid function name";
+                    return "Cannot use DEF as a function name";
 
                 return "Missing function name";
             }
+            if ((thisToken == NUM || thisToken == PARAM ) && (expected.contains(PLUS) && expected.contains(MULT) && expected.contains(SPACE)))
+                return "Invalid expression inside function definition, expected an operation or an ending of the function definition, was given: " + str;
+
+            if ((thisToken == MULT || thisToken == PLUS ) && (expected.contains(PARAM) && expected.contains(SPACE) && expected.contains(FUNCNAME)))
+                return "Invalid expression next to operation inside function definition, was given: " + str;
+
 
             if ((thisToken == FUNCNAME || thisToken == MAIN) && expected.contains(SPACE))
                 return "Invalid function name " + str;
@@ -131,8 +155,6 @@ public class Assignment implements AssignmentConstants {
 
                 } else if (thisToken == SPACE) {
                     switch (nextToken) {
-                        case RBRACE:
-                        case EOL:
                         case EOF:
                             return "Function definition missing expression";
 
@@ -141,8 +163,6 @@ public class Assignment implements AssignmentConstants {
             }
 
             switch (thisToken) {
-                case NUM:
-                case PARAM:
                 case FUNCNAME:
                     if (nextToken == PLUS || nextToken == MULT) {
                         return "Missing operand " + str;
@@ -150,13 +170,13 @@ public class Assignment implements AssignmentConstants {
             }
 
             if (expected.contains(RBRACKET))
-                return "Missing a )";
+                return "Missing a ) ";
 
             if (expected.contains(RBRACE))
-                return "Missing a }";
+                return "Expecting a } and instead recieved: " + str;
 
             if (expected.contains(SEMICOLON))
-                return "Missing a;";
+                return "Expecting a ; and instead recieved: " + str;
 
             switch (nextToken) {
                 case EOL:
@@ -165,7 +185,7 @@ public class Assignment implements AssignmentConstants {
                     return "Unexpected end of file";
             }
 
-            System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
+
             return "Unknown error";
 
     }
@@ -181,7 +201,22 @@ public class Assignment implements AssignmentConstants {
     while (true) {
       jj_consume_token(DEF);
       jj_consume_token(SPACE);
-      WHICHFUNC();
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case MAIN:{
+        jj_consume_token(MAIN);
+        MF();
+        break;
+        }
+      case FUNCNAME:{
+        jj_consume_token(FUNCNAME);
+        GF();
+        break;
+        }
+      default:
+        jj_la1[0] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
       jj_consume_token(SPACE);
       jj_consume_token(SEMICOLON);
       jj_consume_token(EOL);
@@ -191,7 +226,7 @@ public class Assignment implements AssignmentConstants {
         break;
         }
       default:
-        jj_la1[0] = jj_gen;
+        jj_la1[1] = jj_gen;
         break label_1;
       }
     }
@@ -202,16 +237,27 @@ public class Assignment implements AssignmentConstants {
       GF();
     } else {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case MAIN:{
+      case SPACE:{
         MF();
         break;
         }
       default:
-        jj_la1[1] = jj_gen;
+        jj_la1[2] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
     }
+}
+
+  static final public void GF() throws ParseException, ParseException, CustomErrorMessage {Token param;
+    jj_consume_token(SPACE);
+    param = jj_consume_token(PARAM);
+    jj_consume_token(SPACE);
+    jj_consume_token(LBRACE);
+    jj_consume_token(SPACE);
+    EXP(param);
+    jj_consume_token(SPACE);
+    jj_consume_token(RBRACE);
 }
 
   static final public void MF() throws ParseException, ParseException, CustomErrorMessage {
@@ -220,23 +266,10 @@ if (mainDefined) {
         } else {
             mainDefined = true;
         }
-    jj_consume_token(MAIN);
     jj_consume_token(SPACE);
     jj_consume_token(LBRACE);
     jj_consume_token(SPACE);
     EXPMAIN();
-    jj_consume_token(SPACE);
-    jj_consume_token(RBRACE);
-}
-
-  static final public void GF() throws ParseException, ParseException, CustomErrorMessage {Token param;
-    jj_consume_token(FUNCNAME);
-    jj_consume_token(SPACE);
-    param = jj_consume_token(PARAM);
-    jj_consume_token(SPACE);
-    jj_consume_token(LBRACE);
-    jj_consume_token(SPACE);
-    EXP(param);
     jj_consume_token(SPACE);
     jj_consume_token(RBRACE);
 }
@@ -259,7 +292,7 @@ if (!(exactParam.image).equals(p.image)){
       break;
       }
     default:
-      jj_la1[2] = jj_gen;
+      jj_la1[3] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -272,7 +305,7 @@ if (!(exactParam.image).equals(p.image)){
         break;
         }
       default:
-        jj_la1[3] = jj_gen;
+        jj_la1[4] = jj_gen;
         break label_2;
       }
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -285,7 +318,7 @@ if (!(exactParam.image).equals(p.image)){
         break;
         }
       default:
-        jj_la1[4] = jj_gen;
+        jj_la1[5] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -306,7 +339,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
         break;
         }
       default:
-        jj_la1[5] = jj_gen;
+        jj_la1[6] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -324,7 +357,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
       break;
       }
     default:
-      jj_la1[6] = jj_gen;
+      jj_la1[7] = jj_gen;
       jj_consume_token(-1);
       throw new ParseException();
     }
@@ -337,7 +370,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
         break;
         }
       default:
-        jj_la1[7] = jj_gen;
+        jj_la1[8] = jj_gen;
         break label_3;
       }
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
@@ -350,7 +383,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
         break;
         }
       default:
-        jj_la1[8] = jj_gen;
+        jj_la1[9] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -364,7 +397,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
         break;
         }
       default:
-        jj_la1[9] = jj_gen;
+        jj_la1[10] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -387,7 +420,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
 
   static final public void End() throws ParseException, ParseException, CustomErrorMessage {
 if (!mainDefined) {
-        {if (true) throw new ParseException("Missing MAIN function\n0");}
+        {if (true) throw new CustomErrorMessage("Missing MAIN function",0);}
         }
 }
 
@@ -399,16 +432,16 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3R_GF_245_5_4()
+  static private boolean jj_3_1()
  {
-    if (jj_scan_token(FUNCNAME)) return true;
-    if (jj_scan_token(SPACE)) return true;
+    if (jj_3R_GF_253_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3_1()
+  static private boolean jj_3R_GF_253_5_4()
  {
-    if (jj_3R_GF_245_5_4()) return true;
+    if (jj_scan_token(SPACE)) return true;
+    if (jj_scan_token(PARAM)) return true;
     return false;
   }
 
@@ -424,13 +457,13 @@ if (!mainDefined) {
   static private Token jj_scanpos, jj_lastpos;
   static private int jj_la;
   static private int jj_gen;
-  static final private int[] jj_la1 = new int[10];
+  static final private int[] jj_la1 = new int[11];
   static private int[] jj_la1_0;
   static {
 	   jj_la1_init_0();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0x40,0x80,0x3100,0x600,0x600,0x3100,0x1100,0x600,0x600,0x1100,};
+	   jj_la1_0 = new int[] {0x1080,0x40,0x800,0x3100,0x600,0x600,0x3100,0x1100,0x600,0x600,0x1100,};
 	}
   static final private JJCalls[] jj_2_rtns = new JJCalls[1];
   static private boolean jj_rescan = false;
@@ -454,7 +487,7 @@ if (!mainDefined) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -469,7 +502,7 @@ if (!mainDefined) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -487,7 +520,7 @@ if (!mainDefined) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -506,7 +539,7 @@ if (!mainDefined) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -523,7 +556,7 @@ if (!mainDefined) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -533,7 +566,7 @@ if (!mainDefined) {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 10; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 11; i++) jj_la1[i] = -1;
 	 for (int i = 0; i < jj_2_rtns.length; i++) jj_2_rtns[i] = new JJCalls();
   }
 
@@ -669,7 +702,7 @@ if (!mainDefined) {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 10; i++) {
+	 for (int i = 0; i < 11; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {
@@ -752,7 +785,7 @@ if (!mainDefined) {
 
 }
 
-class CustomErrorMessage extends Exception {
+class CustomErrorMessage extends Throwable {
     private String message;
     private int line;
 
