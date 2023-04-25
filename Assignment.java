@@ -15,10 +15,9 @@ public class Assignment implements AssignmentConstants {
 
                 System.out.println("PASS");
                 System.out.println("TODO show result");
-                }
+            }
 
             catch (Throwable t){
-
                 System.out.println("FAIL");
                 String errorMessage = "Unknown pass error";
                 int lineNo = 0;
@@ -28,22 +27,9 @@ public class Assignment implements AssignmentConstants {
                      throw t;
                 }
 
-            //    catch (PLMParseException e) {
-            //        //TODO
-            //        System.err.println(lineNo);
-            //        System.err.println(errorMessage);    
-            //        ;
-            //    } 
-
                 catch(ParseException e) {
-                    //TODO
-
-           //         lineNo = e.currentToken.next.beginLine;
-           //         errorMessage = e.getLocalizedMessage();
-                    //System.err.println(exceptionManager.toString());
-                    errorMessage = intepretParseException(e);
-                    System.err.println(errorMessage);
-                    System.err.println(e.currentToken.beginLine);
+                    errorMessage = intepretParseException(e); // passing the javacc error message into the intepreter to get a more granular result
+                    lineNo = e.currentToken.beginLine; // getting the line no of the token
                 }
 
                 catch(TokenMgrError e) {
@@ -52,20 +38,24 @@ public class Assignment implements AssignmentConstants {
                         lineNo = Integer.parseInt(matcher.group().replace("line ", ""));
 
                     errorMessage = "Illegal symbol";
-
-                    System.err.println(lineNo);
-                    System.err.println(errorMessage);
                 }
 
+                catch(CustomErrorMessage e) { // this is a custom error message thrown at run-time when dealing with grammer like if the main function is defined or parameters being consistent
+                    errorMessage = e.getMessage(); // custom class method
+                    lineNo = e.getLine(); // custom class method
+                }
+
+                System.err.println(lineNo);
+                System.err.println(errorMessage);
 
             // Catching Throwable is ugly but JavaCC throws Error objects!
             }
-        }
+    }
 
         private static String intepretParseException(ParseException e) { // given a parse exception, take the token and give a helpful string representation of the error
-            int at = e.currentToken.kind;
-            int found = e.currentToken.next.kind;
             String str = e.currentToken.image + e.currentToken.next.image + "...";
+            int thisToken = e.currentToken.kind;
+            int nextToken = e.currentToken.next.kind;
 
             // Form the set of expected token kinds
             Set<Integer> expected = new HashSet();
@@ -73,17 +63,24 @@ public class Assignment implements AssignmentConstants {
                 expected.add(i[0]);
             }
 
+
             // Determine an appropriate error message from the caught
             // tokens via case analysis
 
-            if (found == SPACE)
-                return "Unexpected space";
+            if (nextToken == SPACE){
+                if (thisToken == SPACE){
+                    return "Cannot have consecutive spaces, invalid space";
+                }
+                else{
+                  return "Unexpected space";
+                }
+            }
 
             if (expected.contains(DEF))
                 return "Missing keyword DEF";
 
             if (expected.contains(SPACE)) {
-                switch (found) {
+                switch (nextToken) {
                     case LBRACE:
                     case RBRACE:
                     case SEMICOLON:
@@ -94,19 +91,19 @@ public class Assignment implements AssignmentConstants {
             }
 
             if (expected.contains(FUNCNAME) && expected.contains(MAIN)) {
-                if (found == DEF)
+                if (nextToken == DEF)
                     return "DEF is not a valid function name";
 
                 return "Missing function name";
             }
 
-            if ((at == FUNCNAME || at == MAIN) && expected.contains(SPACE))
+            if ((thisToken == FUNCNAME || thisToken == MAIN) && expected.contains(SPACE))
                 return "Invalid function name " + str;
 
             if (expected.contains(PARAM) && expected.size() == 1)
                 return "Missing parameter name";
 
-            if (at == PARAM) {
+            if (thisToken == PARAM) {
                 if (expected.contains(SPACE) && expected.size() == 1) {
                     return "Invalid parameter name " + str;
                 } else {
@@ -115,25 +112,25 @@ public class Assignment implements AssignmentConstants {
             }
 
             if (expected.contains(LBRACE)) {
-                if (found == PARAM) {
+                if (nextToken == PARAM) {
                     return "MAIN definition should have no parameter";
                 } else {
                     return "Missing {";
                 }
             }
 
-            if (at == FUNCNAME && expected.contains(LBRACKET))
+            if (thisToken == FUNCNAME && expected.contains(LBRACKET))
                 return "Invalid function call " + str;
 
             if (expected.contains(NUM) && expected.contains(PARAM) && expected.contains(FUNCNAME)) {
-                if (found == MAIN)
+                if (nextToken == MAIN)
                     return "Invalid call, MAIN cannot be called in a function expression";
 
-                if (at == LBRACKET) {
+                if (thisToken == LBRACKET) {
                     return "Invalid use of left bracket, only to be used with a function call";
 
-                } else if (at == SPACE) {
-                    switch (found) {
+                } else if (thisToken == SPACE) {
+                    switch (nextToken) {
                         case RBRACE:
                         case EOL:
                         case EOF:
@@ -143,11 +140,11 @@ public class Assignment implements AssignmentConstants {
                 }
             }
 
-            switch (at) {
+            switch (thisToken) {
                 case NUM:
                 case PARAM:
                 case FUNCNAME:
-                    if (found == PLUS || found == MULT) {
+                    if (nextToken == PLUS || nextToken == MULT) {
                         return "Missing operand " + str;
                     }
             }
@@ -161,25 +158,25 @@ public class Assignment implements AssignmentConstants {
             if (expected.contains(SEMICOLON))
                 return "Missing a;";
 
-            switch (found) {
+            switch (nextToken) {
                 case EOL:
                     return "Unexpected new line";
                 case EOF:
                     return "Unexpected end of file";
             }
 
-            System.out.println("\n" + "At: " + at + "\n" + "Found: " + found + "\n" + "Expected: " + expected.toString() + "\n");
+            System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
             return "Unknown error";
 
     }
 
-  static final public void Start() throws ParseException, ParseException {
+  static final public void Start() throws ParseException, ParseException, CustomErrorMessage {
     splitLines();
     jj_consume_token(0);
     End();
 }
 
-  static final public void splitLines() throws ParseException, ParseException {
+  static final public void splitLines() throws ParseException, ParseException, CustomErrorMessage {
     label_1:
     while (true) {
       jj_consume_token(DEF);
@@ -200,7 +197,7 @@ public class Assignment implements AssignmentConstants {
     }
 }
 
-  static final public void WHICHFUNC() throws ParseException, ParseException {
+  static final public void WHICHFUNC() throws ParseException, ParseException, CustomErrorMessage {
     if (jj_2_1(2)) {
       GF();
     } else {
@@ -217,7 +214,7 @@ public class Assignment implements AssignmentConstants {
     }
 }
 
-  static final public void MF() throws ParseException, ParseException {
+  static final public void MF() throws ParseException, ParseException, CustomErrorMessage {
 if (mainDefined) {
             {if (true) throw new ParseException("Main function can only be defined once");}
         } else {
@@ -232,7 +229,7 @@ if (mainDefined) {
     jj_consume_token(RBRACE);
 }
 
-  static final public void GF() throws ParseException, ParseException {Token param;
+  static final public void GF() throws ParseException, ParseException, CustomErrorMessage {Token param;
     jj_consume_token(FUNCNAME);
     jj_consume_token(SPACE);
     param = jj_consume_token(PARAM);
@@ -244,7 +241,7 @@ if (mainDefined) {
     jj_consume_token(RBRACE);
 }
 
-  static final public void EXP(Token p) throws ParseException, ParseException {Token exactParam;
+  static final public void EXP(Token p) throws ParseException, ParseException, CustomErrorMessage {Token exactParam;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case FUNCNAME:{
       FUNCCALL(p);
@@ -257,7 +254,7 @@ if (mainDefined) {
     case PARAM:{
       exactParam = jj_consume_token(PARAM);
 if (!(exactParam.image).equals(p.image)){
-        {if (true) throw new ParseException("Expected parameter " + p.image + ", was given, " + exactParam.image + " ");}
+        {if (true) throw new CustomErrorMessage("Expected parameter " + p.image + ", was given, " + exactParam.image + " ", exactParam.beginLine);}
     }
       break;
       }
@@ -304,7 +301,7 @@ if (!(exactParam.image).equals(p.image)){
       case PARAM:{
         exactParam = jj_consume_token(PARAM);
 if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the same as the one mentioned in the func def
-        {if (true) throw new ParseException("Expected parameter was: " + p.image + ", was given: " + exactParam.image);}
+        {if (true) throw new CustomErrorMessage("Expected parameter was: " + p.image + ", was given: " + exactParam.image, exactParam.beginLine);}
     }
         break;
         }
@@ -316,7 +313,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
     }
 }
 
-  static final public void EXPMAIN() throws ParseException, ParseException {
+  static final public void EXPMAIN() throws ParseException, ParseException, CustomErrorMessage {
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case FUNCNAME:{
       FUNCCALLMAIN();
@@ -374,21 +371,21 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
     }
 }
 
-  static final public void FUNCCALL(Token p) throws ParseException, ParseException {
+  static final public void FUNCCALL(Token p) throws ParseException, ParseException, CustomErrorMessage {
     jj_consume_token(FUNCNAME);
     jj_consume_token(LBRACKET);
     EXP(p);
     jj_consume_token(RBRACKET);
 }
 
-  static final public void FUNCCALLMAIN() throws ParseException, ParseException {
+  static final public void FUNCCALLMAIN() throws ParseException, ParseException, CustomErrorMessage {
     jj_consume_token(FUNCNAME);
     jj_consume_token(LBRACKET);
     EXPMAIN();
     jj_consume_token(RBRACKET);
 }
 
-  static final public void End() throws ParseException, ParseException {
+  static final public void End() throws ParseException, ParseException, CustomErrorMessage {
 if (!mainDefined) {
         {if (true) throw new ParseException("Missing MAIN function\n0");}
         }
@@ -402,16 +399,16 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3_1()
- {
-    if (jj_3R_GF_228_5_4()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_GF_228_5_4()
+  static private boolean jj_3R_GF_245_5_4()
  {
     if (jj_scan_token(FUNCNAME)) return true;
     if (jj_scan_token(SPACE)) return true;
+    return false;
+  }
+
+  static private boolean jj_3_1()
+ {
+    if (jj_3R_GF_245_5_4()) return true;
     return false;
   }
 
@@ -753,4 +750,23 @@ if (!mainDefined) {
 	 JJCalls next;
   }
 
+}
+
+class CustomErrorMessage extends Exception {
+    private String message;
+    private int line;
+
+    // Constructor, not really 
+    public CustomErrorMessage(String givenMessage, int givenLine) {
+        message =  givenMessage;
+        line =  givenLine;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public int getLine() {
+        return line;
+    }
 }
