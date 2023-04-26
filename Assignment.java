@@ -443,11 +443,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_319_5_4()) return true;
+    if (jj_3R_GF_347_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_319_5_4()
+  static private boolean jj_3R_GF_347_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -794,6 +794,33 @@ if (!mainDefined) {
 
 }
 
+class Evaluater{
+    private Function[] functions;
+    private int finalValue;
+    private Stack<Function> stack = new Stack<Function>();
+    private boolean diverges = false;
+
+
+    // this function takes a string like: ADDFOUR x { x+4 }
+    // splits it into the relevent parts to make it a function object and then adds it to the list of functions
+
+    public void addFunctionFromString(String func){ // should look like: 
+        // filtering the parts of the function structure
+        String name = func.split("[A-Z]+")[0];
+        String body = func.split("{ . }")[0];
+        body = body.substring(1,body.length()-1);
+        String namedParam = func.split("[a-z]+")[0];
+        System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam +"\n");
+
+    }
+
+
+
+
+
+
+}
+
 // all passed functions are passed here for processing
 class Function {
     private String name; // name of this function
@@ -821,8 +848,12 @@ class Function {
     }
 
     public String[] extractCalledFunctions(){ //getting the called functions 
-        String[] substrings = body.split("[^A-Z]+");
+        String[] substrings = body.split("[A-Z]+");
         return substrings;
+    }
+
+    public boolean hasCalledFunctions(){
+        return (extractCalledFunctions().length == 0);
     }
 
     // when this is called by the master functions class, it should:
@@ -843,9 +874,6 @@ class Function {
     public String getNamedParam(){return namedParam;}
 
     public String[] getCalledFunc(){return calledFunctions;}
-
-
-
 
 }
 
