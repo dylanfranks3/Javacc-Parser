@@ -1,7 +1,6 @@
 FAIL
-  
 
-thisToken: 11
-nextToken: 11
+thisToken: 1
+nextToken: 13
 Expected: [8, 12]
 

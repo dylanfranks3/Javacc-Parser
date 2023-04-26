@@ -1,1 +1,1 @@
-DEF MAIN {  ADDFOUR(x+3*FOO(x)) } ;
+DEF MAIN { ADDFOUR(x*FOO(1)) } ;

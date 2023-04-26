@@ -37,7 +37,8 @@ public class Assignment implements AssignmentConstants {
                     if (matcher.find())
                         lineNo = Integer.parseInt(matcher.group().replace("line ", ""));
 
-                    errorMessage = "Illegal symbol";
+
+                    errorMessage = e.toString();
                 }
 
                 catch(CustomErrorMessage e) { // this is a custom error message thrown at run-time when dealing with grammer like if the main function is defined or parameters being consistent
@@ -54,25 +55,25 @@ public class Assignment implements AssignmentConstants {
     }
 
         private static String intepretParseException(ParseException e) { // given a parse exception, take the token and give a helpful string representation of the error
+            // getting the relevent information from the thrown token
             String str = e.currentToken.image + e.currentToken.next.image;
             int thisToken = e.currentToken.kind;
             int nextToken = e.currentToken.next.kind;
 
-            System.out.println(str);
             // Form the set of expected token kinds
             Set<Integer> expected = new HashSet();
-            for (int[] i : e.expectedTokenSequences) {
-                expected.add(i[0]);
+            for (int i = 0; i <  e.expectedTokenSequences.length; i++) {
+                expected.add(e.expectedTokenSequences[i][0]);
             }
 
-            System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
+            //System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
 
-            // Determine an appropriate error message from the caught
-            // tokens via case analysis
+            // Deciphering the parse exception from the thrown token 
             if (thisToken == SPACE && nextToken == EOL)
                 return "Unexpected EOL";
 
 
+            // Consecutive space check
             if (nextToken == SPACE){
                 if (thisToken == SPACE){
                     return "Cannot have consecutive spaces, invalid space";
@@ -82,6 +83,7 @@ public class Assignment implements AssignmentConstants {
                 }
             }
 
+            // checking for empty function defintion
             if (expected.contains(DEF))
                 if (thisToken == EOF && nextToken == EOF)
                     return "Empty input";
@@ -93,37 +95,28 @@ public class Assignment implements AssignmentConstants {
 
             if ((thisToken == MAIN ) && expected.contains(SPACE) && nextToken != SPACE)
                 return "Incorrect defintion of MAIN, correct the formatting of the function name, instead recieved: " + str;
-/*
 
-            if (expected.contains(SPACE)) {
-                switch (nextToken) {
-                    case LBRACE:
-                    case RBRACE:
-                    case SEMICOLON:
-                    case EOL:
-                    case EOF:
-                        return "Missing whitespace";
-                }
-            }
 
-            */
-
+            // function name errors
             if (expected.contains(MAIN) && expected.contains(FUNCNAME)) {
                 if (nextToken == DEF)
                     return "Cannot use DEF as a function name";
 
                 return "Missing function name";
             }
+
+            // internal function expression errors
             if ((thisToken == NUM || thisToken == PARAM ) && (expected.contains(PLUS) && expected.contains(MULT) && expected.contains(SPACE)))
                 return "Invalid expression inside function definition, expected an operation or an ending of the function definition, was given: " + str;
 
             if ((thisToken == MULT || thisToken == PLUS ) && (expected.contains(PARAM) && expected.contains(SPACE) && expected.contains(FUNCNAME)))
                 return "Invalid expression next to operation inside function definition, was given: " + str;
 
-
+            // strange function name choices
             if ((thisToken == FUNCNAME || thisToken == MAIN) && expected.contains(SPACE))
                 return "Invalid function name " + str;
 
+            // no parameter
             if (expected.contains(PARAM) && expected.size() == 1)
                 return "Missing parameter name";
 
@@ -135,6 +128,7 @@ public class Assignment implements AssignmentConstants {
                 }
             }
 
+            // formatting errors
             if (expected.contains(LBRACE)) {
                 if (nextToken == PARAM) {
                     return "MAIN definition should have no parameter";
@@ -162,15 +156,13 @@ public class Assignment implements AssignmentConstants {
                 }
             }
 
-            switch (thisToken) {
-                case FUNCNAME:
-                    if (nextToken == PLUS || nextToken == MULT) {
-                        return "Missing operand " + str;
-                    }
-            }
+            // operand ordering error
+            if (thisToken == FUNCNAME && (nextToken == PLUS || nextToken == MULT))
+                return "Missing operand, was givenn: " + str;
 
+            // catching the uncaught errors missed from above as the sieve tightens we can be more loose 
             if (expected.contains(RBRACKET))
-                return "Missing a ) ";
+                return "Missing a ), instead recieved: " + str;
 
             if (expected.contains(RBRACE))
                 return "Expecting a } and instead recieved: " + str;
@@ -178,16 +170,33 @@ public class Assignment implements AssignmentConstants {
             if (expected.contains(SEMICOLON))
                 return "Expecting a ; and instead recieved: " + str;
 
+
+
             switch (nextToken) {
                 case EOL:
                     return "Unexpected new line";
                 case EOF:
                     return "Unexpected end of file";
+                case PARAM:
+                    return "Unexpected parameter in main function definition, instead given: " + str;
             }
 
+            // final error classification if nothing has been caught 
+            return "Unknown string: " + str;
+    }
 
-            return "Unknown error";
-
+    // checking if a string contains a lowercase char, purpose for checking main function line def 
+    private static boolean containsPARAM(String expression) {
+        char ch;
+        for(int i=0;i < expression.length();i++) {
+            ch = expression.charAt(i);
+            if(!Character.isDigit(ch)) {
+                if (Character.isLowerCase(ch)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
   static final public void Start() throws ParseException, ParseException, CustomErrorMessage {
@@ -348,12 +357,12 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
 
   static final public void EXPMAIN() throws ParseException, ParseException, CustomErrorMessage {
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-    case FUNCNAME:{
-      FUNCCALLMAIN();
-      break;
-      }
     case NUM:{
       jj_consume_token(NUM);
+      break;
+      }
+    case FUNCNAME:{
+      FUNCCALLMAIN();
       break;
       }
     default:
@@ -411,7 +420,7 @@ if (!(exactParam.image).equals(p.image)){ //checking the passed parameter is the
     jj_consume_token(RBRACKET);
 }
 
-  static final public void FUNCCALLMAIN() throws ParseException, ParseException, CustomErrorMessage {
+  static final public void FUNCCALLMAIN() throws ParseException, ParseException, CustomErrorMessage {Token t;
     jj_consume_token(FUNCNAME);
     jj_consume_token(LBRACKET);
     EXPMAIN();
@@ -434,11 +443,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_253_5_4()) return true;
+    if (jj_3R_GF_319_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_253_5_4()
+  static private boolean jj_3R_GF_319_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -784,6 +793,62 @@ if (!mainDefined) {
   }
 
 }
+
+// all passed functions are passed here for processing
+class Function {
+    private String name; // name of this function
+    private String body;
+    private String namedParam;
+    private String[] calledFunctions; // name of all the called functions within this
+
+    // constructor for when a function is found
+    public Function(String givenName, String givenBody, String givenNamedParam){
+        name = givenName;
+        body = givenBody;
+        namedParam = givenNamedParam;
+        calledFunctions = extractCalledFunctions();
+    }
+
+    // constructor when it is being processed in the stack
+    public Function(String givenName, String givenBody){
+        name = givenName;
+        body = givenBody;
+        calledFunctions = extractCalledFunctions();
+    }
+
+    public String replaceParam(String givenFuncBody){
+        return (body.replace(namedParam,givenFuncBody));
+    }
+
+    public String[] extractCalledFunctions(){ //getting the called functions 
+        String[] substrings = body.split("[^A-Z]+");
+        return substrings;
+    }
+
+    // when this is called by the master functions class, it should:
+    // 1) take an internal called funtion
+    // 2) find the function with that name
+    // 3) call replaceParam on that function with the passed param 
+    // 4) then call replaceFuncCall on this function, giving back a decomposed function
+    public String replaceFuncCall(String original, String replacer){
+        return body.replace(original,replacer);
+
+    }
+
+    // getter functions
+    public String getName(){return name;}
+
+    public String getBody(){return body;}
+
+    public String getNamedParam(){return namedParam;}
+
+    public String[] getCalledFunc(){return calledFunctions;}
+
+
+
+
+}
+
 
 class CustomErrorMessage extends Throwable {
     private String message;
