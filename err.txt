@@ -1,2 +1,0 @@
-Unexpected parameter in main function definition, instead given: (x
-1

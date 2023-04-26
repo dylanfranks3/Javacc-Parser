@@ -1,6 +1,7 @@
-FAIL
+PASS
+TODO show result
 
-thisToken: 1
-nextToken: 13
-Expected: [8, 12]
+name: ADDFOUR
+body: { x+4 }
+namedparam: x
 
