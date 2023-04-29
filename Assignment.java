@@ -450,11 +450,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_371_5_4()) return true;
+    if (jj_3R_GF_370_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_371_5_4()
+  static private boolean jj_3R_GF_370_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -812,11 +812,7 @@ class Evaluater{
     // splits it into the relevent parts to make it a function object and then adds it to the list of functions
 
 
-    public void addFunctionFromString(String func){ // should look like: 
-        // filtering the parts of the function structure
-      //  Pattern namePattern = Pattern.compile("[A-Z]+");
-      //  Matcher nameMatcher = namePattern.matcher(func);
-      //  System.out.println(nameMatcher.group());
+    public void addFunctionFromString(String func) throws ParseException{
         String name = "";
         String body = "";
         String namedParam = "";
@@ -833,6 +829,8 @@ class Evaluater{
         if (matcher.find()){
             namedParam = matcher.group();}
 
+        if (name == "" || body == "" || namedParam == "")
+            throw new ParseException("Incorrect syntax for function definition");
 
         System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam +"\n");
 
@@ -911,6 +909,7 @@ class CustomErrorMessage extends Throwable {
         message =  givenMessage;
         line =  givenLine;
     }
+
 
     public String getMessage() {
         return message;
