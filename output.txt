@@ -1,7 +1,9 @@
+[DEF QQ yy { 2*PP(yy)+3*QQ(yy) } ;, DEF PP xx { QQ(xx)+3 } ;, DEF MAIN { PP(0)+3 } ;]
 PASS
-TODO show result
 
 name: ADDFOUR
-body: { x+4 }
+body: ADDFOUR(x+4*FOO(x+3))
 namedparam: x
 
+[ADDFOUR, FOO]
+TODO show result

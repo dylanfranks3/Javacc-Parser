@@ -1,6 +1,7 @@
 PARSER_BEGIN(Assignment)
 
 import java.util.*; //library import
+import java.io.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -10,15 +11,33 @@ public class Assignment {
 
     public static void main(String[] args) throws ParseException, TokenMgrError {
             try{
-                Assignment parser = new Assignment(System.in); // give whatever is inputted to the parser
+                Scanner in = new Scanner(System.in);
+                String s = "";
+                ArrayList<String> eachLine = new ArrayList<String>(); // for evaluating the functions later
+
+                while (in.hasNextLine()) {
+                    String nL = in.nextLine();
+                    s = s  + nL + "\n" ;
+                    eachLine.add(nL);
+                }
+         
+                System.out.println(eachLine);
+
+                InputStream is = new ByteArrayInputStream( s.getBytes() ); // parse it back into an INPUTstream
+                Assignment parser = new Assignment(is); // give whatever is inputted to the parser
                 parser.Start(); // start the grammer checking
 
                 System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
+                /////////////////////////////
+                // now the evaluation
+
+                Evaluater assigmentEval = new Evaluater(eachLine);
+                String testFunc = "ADDFOUR x { ADDFOUR(x+4*FOO(x+3)) }";
+                assigmentEval.addFunctionFromString(testFunc);
+
                 System.out.println("TODO show result");
 
-                Evaluater assigmentEval = new Evaluater() ;
-                String testFunc = "ADDFOUR x { x+4 }";
-                assigmentEval.addFunctionFromString(testFunc);
+                
             
 
 
@@ -209,37 +228,53 @@ public class Assignment {
 }
 
 class Evaluater{
-    private Function[] functions;
-    private int finalValue;
+    private ArrayList<Function> functions;
+    private ArrayList<String> allInput;
+    private int finalValue; //should store the final value 
     private Stack<Function> stack = new Stack<Function>();
     private boolean diverges = false;
 
+    public Evaluater(ArrayList<String> givenInput){
+        allInput = givenInput;
+        functions = new ArrayList<Function>();
+        finalValue = finalValue;
+        stack = stack;
+        diverges = diverges;
+    }
 
     // this function takes a string like: ADDFOUR x { x+4 }
     // splits it into the relevent parts to make it a function object and then adds it to the list of functions
-
-
     public void addFunctionFromString(String func) throws ParseException{ 
+        //initialising these vaiables to be able to grep the fields from the plain text
         String name = "";
         String body = "";
         String namedParam = "";
 
+        //grepping the fields by pattern
         Matcher matcher = Pattern.compile("[A-Z]+").matcher(func);
         if (matcher.find()){
             name = matcher.group();}
 
         matcher = Pattern.compile("\\{ (.)+ \\}").matcher(func);
         if (matcher.find()){
-            body = matcher.group();}
+            body = matcher.group();
+            body = body.substring(2,body.length() - 2);
+        }
 
         matcher = Pattern.compile("[a-z]+").matcher(func);
         if (matcher.find()){
             namedParam = matcher.group();}
         
-        if (name == "" || body == "" || namedParam == "")
+        if (name == "" || body == "" || namedParam == "") //if any of them are empty, i.e not found, throw error
             throw new ParseException("Incorrect syntax for function definition"); 
 
+        Function newFunc = new Function(name, body, namedParam); // initialising the object
+        functions.add(newFunc); // add the new formed function
+        
+
         System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam +"\n");
+
+        System.out.println(newFunc.extractCalledFunctions());
 
     }
 
@@ -255,34 +290,43 @@ class Function {
     private String name; // name of this function
     private String body;
     private String namedParam;
-    private String[] calledFunctions; // name of all the called functions within this
+    private ArrayList<String> calledFunctions; // name of all the called functions within this
 
     // constructor for when a function is found
     public Function(String givenName, String givenBody, String givenNamedParam){
         name = givenName;
         body = givenBody;
         namedParam = givenNamedParam;
-        calledFunctions = extractCalledFunctions();
+        calledFunctions = new ArrayList<String>();
+        calledFunctions =  extractCalledFunctions();
     }
 
     // constructor when it is being processed in the stack
     public Function(String givenName, String givenBody){
         name = givenName;
         body = givenBody;
-        calledFunctions = extractCalledFunctions();
+        calledFunctions = new ArrayList<String>();
+        calledFunctions =  extractCalledFunctions();
     }
 
     public String replaceParam(String givenFuncBody){
         return (body.replace(namedParam,givenFuncBody));
     }
 
-    public String[] extractCalledFunctions(){ //getting the called functions 
-        String[] substrings = body.split("[A-Z]+");
-        return substrings;
+    public ArrayList<String> extractCalledFunctions(){ //getting the called functions
+        ArrayList<String> allMatches = new ArrayList<String>();
+
+        Matcher m = Pattern.compile("[A-Z]+").matcher(getBody());
+        while (m.find()) {
+            allMatches.add(m.group());
+        }
+
+        return allMatches;
+        
     }
 
     public boolean hasCalledFunctions(){
-        return (extractCalledFunctions().length == 0);
+        return (extractCalledFunctions().size() == 0);
     }
 
     // when this is called by the master functions class, it should:
@@ -292,7 +336,6 @@ class Function {
     // 4) then call replaceFuncCall on this function, giving back a decomposed function
     public String replaceFuncCall(String original, String replacer){ 
         return body.replace(original,replacer);
-
     }
 
     // getter functions
@@ -302,7 +345,7 @@ class Function {
 
     public String getNamedParam(){return namedParam;}
 
-    public String[] getCalledFunc(){return calledFunctions;}
+    public ArrayList<String> getCalledFunc(){return calledFunctions;}
 
 }
 
@@ -355,9 +398,9 @@ void Start() throws ParseException,CustomErrorMessage:{}
 
  }
     
-void splitLines() throws ParseException,CustomErrorMessage:{} //this is to be able to separate each line and determine whether it's a main func of general func (mf/gf resp.)
+void splitLines() throws ParseException,CustomErrorMessage:{Token t;} //this is to be able to separate each line and determine whether it's a main func of general func (mf/gf resp.)
 {
-    (<DEF> <SPACE> (<MAIN> MF() | <FUNCNAME> GF()) <SPACE> <SEMICOLON> <EOL>)+
+     (<DEF> <SPACE> (<MAIN> MF() | <FUNCNAME> GF()) <SPACE> <SEMICOLON> <EOL>)+
 }
     
 void WHICHFUNC() throws ParseException,CustomErrorMessage:{} //determining whether the line is a function def or a main def
