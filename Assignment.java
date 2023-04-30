@@ -14,31 +14,25 @@ public class Assignment implements AssignmentConstants {
                 Scanner in = new Scanner(System.in);
                 String s = "";
                 ArrayList<String> eachLine = new ArrayList<String>(); // for evaluating the functions later
-
                 while (in.hasNextLine()) {
                     String nL = in.nextLine();
                     s = s  + nL + "\n" ;
                     eachLine.add(nL);
                 }
 
-                System.out.println(eachLine);
-
                 InputStream is = new ByteArrayInputStream( s.getBytes() ); // parse it back into an INPUTstream
                 Assignment parser = new Assignment(is); // give whatever is inputted to the parser
                 parser.Start(); // start the grammer checking
-
                 System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
-                /////////////////////////////
+
                 // now the evaluation
-
-                Evaluater assigmentEval = new Evaluater(eachLine);
-                String testFunc = "ADDFOUR x { ADDFOUR(x+4*FOO(x+3)) }";
-                assigmentEval.addFunctionFromString(testFunc);
-
-                System.out.println("TODO show result");
-
-
-
+                int count = 1;
+                Evaluater assigmentEval = new Evaluater();
+                for (String i : eachLine){
+                    String line = i.substring(4); // cutting out the def from each line
+                    assigmentEval.addFunctionFromString(line, count);
+                    count ++;}
+                assigmentEval.startEvalauting();
 
 
             }
@@ -92,12 +86,9 @@ public class Assignment implements AssignmentConstants {
                 expected.add(e.expectedTokenSequences[i][0]);
             }
 
-            //System.out.println("\n" + "thisToken: " + thisToken + "\n" + "nextToken: " + nextToken + "\n" + "Expected: " + expected.toString() + "\n");
-
             // Deciphering the parse exception from the thrown token 
             if (thisToken == SPACE && nextToken == EOL)
                 return "Unexpected EOL";
-
 
             // Consecutive space check
             if (nextToken == SPACE){
@@ -117,11 +108,10 @@ public class Assignment implements AssignmentConstants {
                     return "Missing keyword DEF";
 
             if (( thisToken == FUNCNAME) && expected.contains(SPACE) && nextToken != SPACE)
-                return "Incorrect defintion of function, correct the formatting of the function name, instead recieved: " + str;
+                return "Incorrect defintion of the function name, instead recieved: " + str;
 
             if ((thisToken == MAIN ) && expected.contains(SPACE) && nextToken != SPACE)
-                return "Incorrect defintion of MAIN, correct the formatting of the function name, instead recieved: " + str;
-
+                return "Incorrect defintion of MAIN name, instead recieved: " + str;
 
             // function name errors
             if (expected.contains(MAIN) && expected.contains(FUNCNAME)) {
@@ -196,8 +186,6 @@ public class Assignment implements AssignmentConstants {
             if (expected.contains(SEMICOLON))
                 return "Expecting a ; and instead recieved: " + str;
 
-
-
             switch (nextToken) {
                 case EOL:
                     return "Unexpected new line";
@@ -206,7 +194,6 @@ public class Assignment implements AssignmentConstants {
                 case PARAM:
                     return "Unexpected parameter in main function definition, instead given: " + str;
             }
-
             // final error classification if nothing has been caught 
             return "Unknown string: " + str;
     }
@@ -469,11 +456,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_413_5_4()) return true;
+    if (jj_3R_GF_439_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_413_5_4()
+  static private boolean jj_3R_GF_439_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -827,17 +814,56 @@ class Evaluater{
     private Stack<Function> stack = new Stack<Function>();
     private boolean diverges = false;
 
-    public Evaluater(ArrayList<String> givenInput){
-        allInput = givenInput;
+    public Evaluater(){
         functions = new ArrayList<Function>();
         finalValue = finalValue;
         stack = stack;
         diverges = diverges;
     }
 
+    public boolean checkIfDiverges() throws ParseException{
+        for (Function f: functions){
+            System.out.println("please do me");
+            //TODO
+        }
+        return true;
+
+    }
+
+    public void checkValidFunctions() throws CustomErrorMessage{ // check if any functions call inexistent functions
+        ArrayList<String> functionNames = new ArrayList<String>();
+        for (Function f : functions){
+            functionNames.add(f.getName());
+        }
+
+        for (Function f : functions){ // go through each defined functions and extract the called functions and check them against the defined one
+            ArrayList<String> thisCalledFuncs = f.getCalledFunc();
+            for (String fName : thisCalledFuncs) {
+                if (!thisCalledFuncs.contains(fName)){
+                    throw new CustomErrorMessage("Function (" + f.getName() + ")  calls undefined function (" + fName, f.getLine());
+                }
+            }
+        }
+    }
+
+    public void startEvalauting() throws ParseException, CustomErrorMessage{
+        checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
+
+        for (Function f : functions){
+            if (f.getName() == "MAIN"){ //find the main function and start expanding that
+                Function mainFunc = f;
+                ArrayList<String> mainCalledFunc = mainFunc.extractCalledFunctions();
+                for (String calledFunc : mainCalledFunc){
+                    System.out.println(calledFunc);
+                }
+            }
+        }
+
+    }
+
     // this function takes a string like: ADDFOUR x { x+4 }
     // splits it into the relevent parts to make it a function object and then adds it to the list of functions
-    public void addFunctionFromString(String func) throws ParseException{
+    public void addFunctionFromString(String func, int lineNo) throws ParseException{
         //initialising these vaiables to be able to grep the fields from the plain text
         String name = "";
         String body = "";
@@ -858,14 +884,10 @@ class Evaluater{
         if (matcher.find()){
             namedParam = matcher.group();}
 
-        if (name == "" || body == "" || namedParam == "") //if any of them are empty, i.e not found, throw error
-            throw new ParseException("Incorrect syntax for function definition");
-
-        Function newFunc = new Function(name, body, namedParam); // initialising the object
-        functions.add(newFunc); // add the new formed function
-
-
         System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam +"\n");
+
+        Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
+        functions.add(newFunc); // add the new formed function
 
         System.out.println(newFunc.extractCalledFunctions());
 
@@ -883,12 +905,14 @@ class Function {
     private String name; // name of this function
     private String body;
     private String namedParam;
+    private int line;
     private ArrayList<String> calledFunctions; // name of all the called functions within this
 
     // constructor for when a function is found
-    public Function(String givenName, String givenBody, String givenNamedParam){
+    public Function(String givenName, String givenBody, String givenNamedParam, int givenLine){
         name = givenName;
         body = givenBody;
+        line = givenLine;
         namedParam = givenNamedParam;
         calledFunctions = new ArrayList<String>();
         calledFunctions =  extractCalledFunctions();
@@ -937,6 +961,8 @@ class Function {
     public String getBody(){return body;}
 
     public String getNamedParam(){return namedParam;}
+
+    public int getLine(){return line;}
 
     public ArrayList<String> getCalledFunc(){return calledFunctions;}
 
