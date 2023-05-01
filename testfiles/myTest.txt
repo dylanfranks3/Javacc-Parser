@@ -1,3 +1,3 @@
-DEF MAIN { ADDFOUR(1) } ;
+DEF MAIN { ADDFOUR(1)*ADDFOUR(1+3)+FOO(FOO(10+3)) } ;
 DEF ADDFOUR x { x+4 } ;
-DEF FOO y { BAR(5) } ;
+DEF FOO x { x*5 } ;

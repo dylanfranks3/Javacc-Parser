@@ -1,2 +1,0 @@
-Function (FOO) calls undefined function (BAR)
-3

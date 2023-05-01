@@ -1,16 +1,19 @@
 
+name: QQ
+body: 2*PP(yy)+3*QQ(yy)
+namedparam: yy
+
+name: PP
+body: QQ(xx)+3
+namedparam: xx
+
 name: MAIN
-body: ADDFOUR(1)
+body: PP(0)+3
 namedparam: 
-[ADDFOUR]
 
-name: ADDFOUR
-body: x+4
-namedparam: x
-[]
+[PP]
 
-name: FOO
-body: BAR(5)
-namedparam: y
-[BAR]
-FAIL
+PP PP(0)+3
+(QQ((0))+3)+3
+[QQ]
+PASS

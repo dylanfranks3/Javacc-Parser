@@ -11,6 +11,7 @@ public class Assignment implements AssignmentConstants {
 
     public static void main(String[] args) throws ParseException, TokenMgrError {
             try{
+                // TODO check if the same function has been defined twice
                 Scanner in = new Scanner(System.in);
                 String s = "";
                 ArrayList<String> eachLine = new ArrayList<String>(); // for evaluating the functions later
@@ -457,7 +458,7 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3R_GF_443_5_4()
+  static private boolean jj_3R_GF_475_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -466,7 +467,7 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_443_5_4()) return true;
+    if (jj_3R_GF_475_5_4()) return true;
     return false;
   }
 
@@ -850,21 +851,39 @@ class Evaluater{
         }
     }
 
+    public Function getFunctionByName(String name) throws CustomErrorMessage{ // give it a name, it gives you back the function with that name
+        for (Function f : functions)
+            if (f.getName().equals(name))
+                return f;
+
+        throw new CustomErrorMessage("no function called this",0);
+    }
+
+
+
     public void startEvalauting() throws ParseException, CustomErrorMessage{
         checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
 
-        for (Function f : functions){
-            if (f.getName() == "MAIN"){ //find the main function and start expanding that
-                Function mainFunc = f;
-                ArrayList<String> mainCalledFunc = mainFunc.extractCalledFunctions();
-                for (String calledFunc : mainCalledFunc){
-                    System.out.println(calledFunc);
-                }
-            }
+        Function startPoint = getFunctionByName("MAIN");
+        ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
+
+        System.out.println("\n" + startCalledFuncs + "\n");
+
+
+        for (String cF : startCalledFuncs){
+            String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(cF, startPoint.getBody()); // the body of the called function, the parameter to the function 
+            String entireInternalFuncCall = cF + "(" + bodyOfCalledFunction + ")"; // entire call of the function
+            Function actualCalledFunction = getFunctionByName(cF); // getting the actual object of the function
+            String newBody = actualCalledFunction.replaceParam(bodyOfCalledFunction); // calling this function replacing the paramter with whatever needs replacing
+            startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
+            System.out.println(startPoint.getBody());
         }
 
-    }
+        System.out.println(startPoint.extractCalledFunctions());
 
+
+
+    }
     // this function takes a string like: ADDFOUR x { x+4 }
     // splits it into the relevent parts to make it a function object and then adds it to the list of functions
     public void addFunctionFromString(String func, int lineNo) throws ParseException{
@@ -893,15 +912,7 @@ class Evaluater{
         Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
         functions.add(newFunc); // add the new formed function
 
-        System.out.println(newFunc.extractCalledFunctions());
-
     }
-
-
-
-
-
-
 }
 
 // all passed functions are passed here for processing
@@ -931,7 +942,26 @@ class Function {
     }
 
     public String replaceParam(String givenFuncBody){
-        return (body.replace(namedParam,givenFuncBody));
+        return (body.replace(namedParam,"(" + givenFuncBody + ")")); //adding brackets for distributivity law etc
+    }
+
+    public String getBodyOfCalledFunction(String givenCalledFunction, String bodyToFunc){ // helper function to replace a called function, replace a param with a body
+        System.out.println(givenCalledFunction + " " + bodyToFunc);
+        int leftBracket = 1; //  count the number of left and right brackets and once they equal the paramter has ended
+        int rightBracket = 0;
+        int bodyStart = bodyToFunc.indexOf(givenCalledFunction) + givenCalledFunction.length() + 1;
+        int index = bodyStart;
+
+        while (leftBracket != rightBracket){
+            if (Character.toString(bodyToFunc.charAt(index)).equals("("))
+                leftBracket++;
+            if (Character.toString(bodyToFunc.charAt(index)).equals(")"))
+                rightBracket++;
+
+            index ++;
+        }
+
+        return bodyToFunc.substring(bodyStart,index-1);
     }
 
     public ArrayList<String> extractCalledFunctions(){ //getting the called functions
@@ -947,7 +977,7 @@ class Function {
     }
 
     public boolean hasCalledFunctions(){
-        return (extractCalledFunctions().size() == 0);
+        return (extractCalledFunctions().size() != 0);
     }
 
     // when this is called by the master functions class, it should:
@@ -969,6 +999,8 @@ class Function {
     public int getLine(){return line;}
 
     public ArrayList<String> getCalledFunc(){return calledFunctions;}
+
+    public void updateBody(String newBody){body = newBody;}
 
 }
 
