@@ -1,13 +1,16 @@
-PASS
 
 name: MAIN
-body: 1+ADDFOUR(2+ADDFOUR(3))
+body: ADDFOUR(1)
 namedparam: 
-
-[ADDFOUR, ADDFOUR]
+[ADDFOUR]
 
 name: ADDFOUR
 body: x+4
 namedparam: x
-
 []
+
+name: FOO
+body: BAR(5)
+namedparam: y
+[BAR]
+FAIL

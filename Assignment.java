@@ -23,7 +23,7 @@ public class Assignment implements AssignmentConstants {
                 InputStream is = new ByteArrayInputStream( s.getBytes() ); // parse it back into an INPUTstream
                 Assignment parser = new Assignment(is); // give whatever is inputted to the parser
                 parser.Start(); // start the grammer checking
-                System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
+
 
                 // now the evaluation
                 int count = 1;
@@ -34,7 +34,7 @@ public class Assignment implements AssignmentConstants {
                     count ++;}
                 assigmentEval.startEvalauting();
 
-
+                System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
             }
 
             catch (Throwable t){
@@ -194,6 +194,9 @@ public class Assignment implements AssignmentConstants {
                 case PARAM:
                     return "Unexpected parameter in main function definition, instead given: " + str;
             }
+
+            if (expected.contains(SPACE) && expected.size() == 1)
+                return "Expecting a space by string: " + str;
             // final error classification if nothing has been caught 
             return "Unknown string: " + str;
     }
@@ -454,16 +457,16 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3_1()
- {
-    if (jj_3R_GF_439_5_4()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_GF_439_5_4()
+  static private boolean jj_3R_GF_443_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
+    return false;
+  }
+
+  static private boolean jj_3_1()
+ {
+    if (jj_3R_GF_443_5_4()) return true;
     return false;
   }
 
@@ -836,13 +839,14 @@ class Evaluater{
             functionNames.add(f.getName());
         }
 
-        for (Function f : functions){ // go through each defined functions and extract the called functions and check them against the defined one
+        for (Function f : functions){ // go through each defined functions and extract the called functions and check them against the defined ones in functionNames
             ArrayList<String> thisCalledFuncs = f.getCalledFunc();
-            for (String fName : thisCalledFuncs) {
-                if (!thisCalledFuncs.contains(fName)){
-                    throw new CustomErrorMessage("Function (" + f.getName() + ")  calls undefined function (" + fName, f.getLine());
+            if (thisCalledFuncs.size() > 0)
+                for (String fName : thisCalledFuncs) {
+                    if (!functionNames.contains(fName)){
+                        throw new CustomErrorMessage("Function (" + f.getName() + ") calls undefined function (" + fName + ")", f.getLine());
+                    }
                 }
-            }
         }
     }
 
@@ -884,7 +888,7 @@ class Evaluater{
         if (matcher.find()){
             namedParam = matcher.group();}
 
-        System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam +"\n");
+        System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam);
 
         Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
         functions.add(newFunc); // add the new formed function
