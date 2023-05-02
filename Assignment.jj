@@ -346,7 +346,7 @@ class Evaluater{
                 startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
                 startCalledFuncs = startPoint.extractCalledFunctions();
                 totalCalls ++;
-                if (totalCalls > totalExtracted)
+                if (totalCalls > totalExtracted + 20) //20 just to be sure
                     return "DIVERGENCE"; // PLM is divergent iff the total no. extracted calls < running total calls
             }
         }

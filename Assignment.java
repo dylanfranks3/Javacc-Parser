@@ -249,7 +249,6 @@ public class Assignment implements AssignmentConstants {
                 product *= Integer.parseInt(num);
             }
             body = body.replace(chain,String.valueOf(product));
-
         }
         return body;
     }
@@ -268,7 +267,6 @@ public class Assignment implements AssignmentConstants {
                 sum += Integer.parseInt(num);
             }
             body = body.replace(chain,String.valueOf(sum));
-
         }
         return body;
     }
@@ -517,11 +515,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_528_5_4()) return true;
+    if (jj_3R_GF_523_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_528_5_4()
+  static private boolean jj_3R_GF_523_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -906,7 +904,6 @@ class Evaluater{
                         throw new CustomErrorMessage("Function (" + f.getName() + ") calls undefined function (" + fName + ")", f.getLine());
                     }
                 }
-
         }
     }
 
@@ -943,7 +940,7 @@ class Evaluater{
                 startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
                 startCalledFuncs = startPoint.extractCalledFunctions();
                 totalCalls ++;
-                if (totalCalls > totalExtracted)
+                if (totalCalls > totalExtracted + 20)
                     return "DIVERGENCE"; // PLM is divergent iff the total no. extracted calls < running total calls
             }
         }
@@ -974,7 +971,6 @@ class Evaluater{
 
         Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
         functions.add(newFunc); // add the new formed function
-
     }
 }
 
@@ -1013,7 +1009,6 @@ class Function {
         int rightBracket = 0;
         int bodyStart = bodyToFunc.indexOf(givenCalledFunction) + givenCalledFunction.length() + 1;
         int index = bodyStart;
-
 
         while (leftBracket != rightBracket){
             if (Character.toString(bodyToFunc.charAt(index)).equals("("))
