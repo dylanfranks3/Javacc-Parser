@@ -170,7 +170,7 @@ public class Assignment {
                     switch (nextToken) {
                         case EOF:
                             return "Function definition missing expression";
-                
+            
                     }
                 }
             }
@@ -249,7 +249,6 @@ public class Assignment {
                 product *= Integer.parseInt(num);
             }
             body = body.replace(chain,String.valueOf(product));
-
         }
         return body;
     }
@@ -268,7 +267,6 @@ public class Assignment {
                 sum += Integer.parseInt(num);
             }
             body = body.replace(chain,String.valueOf(sum));
-
         }
         return body;
     }
@@ -312,7 +310,6 @@ class Evaluater{
                         throw new CustomErrorMessage("Function (" + f.getName() + ") calls undefined function (" + fName + ")", f.getLine());
                     }
                 }
-            
         }
     }
 
@@ -380,7 +377,6 @@ class Evaluater{
         
         Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
         functions.add(newFunc); // add the new formed function
-
     }
 }
 
@@ -419,7 +415,6 @@ class Function {
         int rightBracket = 0;
         int bodyStart = bodyToFunc.indexOf(givenCalledFunction) + givenCalledFunction.length() + 1;
         int index = bodyStart;
-
         
         while (leftBracket != rightBracket){
             if (Character.toString(bodyToFunc.charAt(index)).equals("("))
