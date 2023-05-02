@@ -4,12 +4,15 @@ import java.util.*; //library import
 import java.io.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 
 
 public class Assignment implements AssignmentConstants {
     private static boolean mainDefined = false; //checking whether there is a main function, to make sure only defined once, and importantly defined
 
-    public static void main(String[] args) throws ParseException, TokenMgrError {
+    public static void main(String[] args) throws ParseException, TokenMgrError, ScriptException {
             try{
                 // TODO check if the same function has been defined twice
                 Scanner in = new Scanner(System.in);
@@ -33,9 +36,13 @@ public class Assignment implements AssignmentConstants {
                     String line = i.substring(4); // cutting out the def from each line
                     assigmentEval.addFunctionFromString(line, count);
                     count ++;}
-                assigmentEval.startEvalauting();
 
+                String decomposedIntoFunctions = assigmentEval.startEvalauting();
+
+                int result = doOperations(decomposedIntoFunctions);
                 System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
+                System.out.println(result);
+
             }
 
             catch (Throwable t){
@@ -65,6 +72,11 @@ public class Assignment implements AssignmentConstants {
                 catch(CustomErrorMessage e) { // this is a custom error message thrown at run-time when dealing with grammer like if the main function is defined or parameters being consistent
                     errorMessage = e.getMessage(); // custom class method
                     lineNo = e.getLine(); // custom class method
+                }
+
+                catch(ScriptException e){
+                    errorMessage = "Divergent function call";
+                    lineNo = 0;
                 }
 
 
@@ -202,18 +214,77 @@ public class Assignment implements AssignmentConstants {
             return "Unknown string: " + str;
     }
 
-    // checking if a string contains a lowercase char, purpose for checking main function line def 
-    private static boolean containsPARAM(String expression) {
-        char ch;
-        for(int i=0;i < expression.length();i++) {
-            ch = expression.charAt(i);
-            if(!Character.isDigit(ch)) {
-                if (Character.isLowerCase(ch)) {
-                    return true;
-                }
-            }
+
+    private static int doOperations(String equation){
+        String prevEq = equation;
+        String newEq = equation;
+
+        newEq = removeSingleBrackets(newEq); // remove all instances of (number)
+        newEq = replaceMult(newEq); // replace all instances of num*num*num to num
+        newEq = replacePlus(newEq); // replace all instances of num+num+num with num
+
+        while (!newEq.equals(prevEq)){
+            prevEq = newEq;
+            newEq = removeSingleBrackets(newEq);
+            newEq = replaceMult(newEq);
+            newEq = replacePlus(newEq);
         }
-        return false;
+
+       return (Integer.parseInt(newEq));
+
+
+    }
+
+    public static String removeSingleBrackets(String body){
+        ArrayList<String> allMatches = new ArrayList<String>();
+        Matcher m = Pattern.compile("\\([0-9]+\\)").matcher(body); //find any number surrounded by brackets like (4) and turn it into 4
+        while (m.find()) {
+            allMatches.add(m.group());
+        }
+        for (String num : allMatches){
+            String thisNum = num.substring(1,num.length()-1);
+            body = body.replace(num,thisNum);
+        }
+
+        return body;
+    }
+
+    public static String replaceMult(String body){ // find multiplications and replace them with the result
+        ArrayList<String> allMatches = new ArrayList<String>(); //find any number surrounded by brackets like (4) and turn it into 4
+            Matcher m = Pattern.compile("([0-9]+\\*[0-9]+)+(\\*[0-9])*").matcher(body); //anything like 5*3*3432
+            while (m.find()) {
+                allMatches.add(m.group());
+            }
+
+        for (String chain : allMatches){
+            int product = 1;
+            ArrayList<String> eachChain = new ArrayList<String>(Arrays.asList(chain.split("\\*")));
+            for (String num : eachChain){
+                product *= Integer.parseInt(num);
+            }
+            body = body.replace(chain,String.valueOf(product));
+
+        }
+        return body;
+    }
+
+    public static String replacePlus(String body){ // find additions  and replace them with the result
+        ArrayList<String> allMatches = new ArrayList<String>();
+            Matcher m = Pattern.compile("([0-9]+\\+[0-9]+)+(\\+[0-9])*").matcher(body); //anything like 5+3+3432
+            while (m.find()) {
+                allMatches.add(m.group());
+            }
+
+        for (String chain : allMatches){
+            int sum = 0;
+            ArrayList<String> eachChain = new ArrayList<String>(Arrays.asList(chain.split("\\+")));
+            for (String num : eachChain){
+                sum += Integer.parseInt(num);
+            }
+            body = body.replace(chain,String.valueOf(sum));
+
+        }
+        return body;
     }
 
   static final public void Start() throws ParseException, ParseException, CustomErrorMessage {
@@ -458,7 +529,7 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3R_GF_475_5_4()
+  static private boolean jj_3R_GF_543_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -467,7 +538,7 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_475_5_4()) return true;
+    if (jj_3R_GF_543_5_4()) return true;
     return false;
   }
 
@@ -861,27 +932,24 @@ class Evaluater{
 
 
 
-    public void startEvalauting() throws ParseException, CustomErrorMessage{
+    public String startEvalauting() throws ParseException, CustomErrorMessage, ScriptException{
         checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
 
         Function startPoint = getFunctionByName("MAIN");
-        ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
 
-        System.out.println("\n" + startCalledFuncs + "\n");
-
-
-        for (String cF : startCalledFuncs){
-            String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(cF, startPoint.getBody()); // the body of the called function, the parameter to the function 
-            String entireInternalFuncCall = cF + "(" + bodyOfCalledFunction + ")"; // entire call of the function
-            Function actualCalledFunction = getFunctionByName(cF); // getting the actual object of the function
-            String newBody = actualCalledFunction.replaceParam(bodyOfCalledFunction); // calling this function replacing the paramter with whatever needs replacing
-            startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
-            System.out.println(startPoint.getBody());
+        while (startPoint.hasCalledFunctions()){
+            ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
+            for (String cF : startCalledFuncs){
+                String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(cF, startPoint.getBody()); // the body of the called function, the parameter to the function 
+                String entireInternalFuncCall = cF + "(" + bodyOfCalledFunction + ")"; // entire call of the function
+                Function actualCalledFunction = getFunctionByName(cF); // getting the actual object of the function
+                String newBody = actualCalledFunction.replaceParam(bodyOfCalledFunction); // calling this function replacing the paramter with whatever needs replacing
+                startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
+            }
         }
 
-        System.out.println(startPoint.extractCalledFunctions());
 
-
+        return startPoint.getBody();
 
     }
     // this function takes a string like: ADDFOUR x { x+4 }
@@ -907,7 +975,7 @@ class Evaluater{
         if (matcher.find()){
             namedParam = matcher.group();}
 
-        System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam);
+     //   System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam);
 
         Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
         functions.add(newFunc); // add the new formed function
@@ -946,7 +1014,6 @@ class Function {
     }
 
     public String getBodyOfCalledFunction(String givenCalledFunction, String bodyToFunc){ // helper function to replace a called function, replace a param with a body
-        System.out.println(givenCalledFunction + " " + bodyToFunc);
         int leftBracket = 1; //  count the number of left and right brackets and once they equal the paramter has ended
         int rightBracket = 0;
         int bodyStart = bodyToFunc.indexOf(givenCalledFunction) + givenCalledFunction.length() + 1;
