@@ -529,16 +529,16 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3_1()
- {
-    if (jj_3R_GF_549_5_4()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_GF_549_5_4()
+  static private boolean jj_3R_GF_544_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
+    return false;
+  }
+
+  static private boolean jj_3_1()
+ {
+    if (jj_3R_GF_544_5_4()) return true;
     return false;
   }
 
@@ -936,12 +936,10 @@ class Evaluater{
 
     public String startEvalauting() throws ParseException, CustomErrorMessage, ScriptException{
         checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
-
         Function startPoint = getFunctionByName("MAIN");
 
         while (startPoint.hasCalledFunctions()){
             ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
-
             while (startCalledFuncs.size() > 0){
                 String firstCF = startCalledFuncs.get(0);
                 String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(firstCF, startPoint.getBody()); // the body of the called function, the parameter to the function 
@@ -952,10 +950,7 @@ class Evaluater{
                 startCalledFuncs = startPoint.extractCalledFunctions();
             }
         }
-
-
         return startPoint.getBody();
-
     }
     // this function takes a string like: ADDFOUR x { x+4 }
     // splits it into the relevent parts to make it a function object and then adds it to the list of functions

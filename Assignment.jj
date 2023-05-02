@@ -304,11 +304,14 @@ class Evaluater{
         diverges = diverges;
     }
 
-    public boolean checkIfDiverges() throws CustomErrorMessage{
+    public void checkIfDiverges() throws CustomErrorMessage{
 
         for (Function f: functions){
-            ArrayList<String> allCalledFunctions;
-            System.out.println("please do me");
+            ArrayList<ArrayLisString> functionCallPath;
+            functionCallPath.add(f.getName());
+            functionCallPath = f.extractCalledFunctions();
+
+
             //TODO
         }
         return true;
@@ -340,16 +343,21 @@ class Evaluater{
         throw new CustomErrorMessage("no function called this",0);
     }
 
+    public int totalExtractedFunctionCalls(){
+        int total = 0;
+        for (Function f : functions)
+            total += f.extractCalledFunctions().size()
+
+        System.out.println(total);
+    }
     
 
     public String startEvalauting() throws ParseException, CustomErrorMessage, ScriptException{
         checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
-
         Function startPoint = getFunctionByName("MAIN");
 
         while (startPoint.hasCalledFunctions()){
             ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
-
             while (startCalledFuncs.size() > 0){
                 String firstCF = startCalledFuncs.get(0);
                 String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(firstCF, startPoint.getBody()); // the body of the called function, the parameter to the function 
@@ -360,10 +368,7 @@ class Evaluater{
                 startCalledFuncs = startPoint.extractCalledFunctions();
             }
         }
-
-        
         return startPoint.getBody();
-
     }
     // this function takes a string like: ADDFOUR x { x+4 }
     // splits it into the relevent parts to make it a function object and then adds it to the list of functions
