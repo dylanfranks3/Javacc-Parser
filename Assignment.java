@@ -39,9 +39,15 @@ public class Assignment implements AssignmentConstants {
 
                 String decomposedIntoFunctions = assigmentEval.startEvalauting();
 
-                int result = doOperations(decomposedIntoFunctions);
-                System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
-                System.out.println(result);
+                if (decomposedIntoFunctions.equals("DIVERGENCE")){
+                    System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
+                    System.out.println("DIVERGENCE");
+                }
+                else{
+                    int result = doOperations(decomposedIntoFunctions);
+                    System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
+                    System.out.println(result);
+                }
 
             }
 
@@ -529,7 +535,7 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3R_GF_544_5_4()
+  static private boolean jj_3R_GF_566_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -538,7 +544,7 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_544_5_4()) return true;
+    if (jj_3R_GF_566_5_4()) return true;
     return false;
   }
 
@@ -896,22 +902,25 @@ class Evaluater{
         diverges = diverges;
     }
 
-    public boolean checkIfDiverges() throws CustomErrorMessage{
 
-        for (Function f: functions){
-            ArrayList<String> allCalledFunctions;
-            System.out.println("please do me");
-            //TODO
-        }
-        return true;
 
-    }
-
-    public void checkValidFunctions() throws CustomErrorMessage{ // check if any functions call inexistent functions
+    public void checkValidFunctions() throws CustomErrorMessage{ // check if any functions call inexistent functions or function is defined teice
         ArrayList<String> functionNames = new ArrayList<String>();
         for (Function f : functions){
             functionNames.add(f.getName());
         }
+
+        for (int i = 0; i < functionNames.size(); i++){
+            String fName = functionNames.get(i);
+            functionNames.remove(i);
+            if (functionNames.contains(fName)){
+                Function thisF = getFunctionByName(fName);
+                throw new CustomErrorMessage("Function (" + thisF.getName() + ") is defined more than one", thisF.getLine());
+            }
+            functionNames.add(i,fName);
+        }
+
+
 
         for (Function f : functions){ // go through each defined functions and extract the called functions and check them against the defined ones in functionNames
             ArrayList<String> thisCalledFuncs = f.getCalledFunc();
@@ -921,6 +930,7 @@ class Evaluater{
                         throw new CustomErrorMessage("Function (" + f.getName() + ") calls undefined function (" + fName + ")", f.getLine());
                     }
                 }
+
         }
     }
 
@@ -932,12 +942,20 @@ class Evaluater{
         throw new CustomErrorMessage("no function called this",0);
     }
 
-
+    public int totalExtractedFunctionCalls(){
+        int total = 0;
+        for (Function f : functions){
+            total += f.extractCalledFunctions().size();
+        }
+        return total;
+    }
 
     public String startEvalauting() throws ParseException, CustomErrorMessage, ScriptException{
         checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
-        Function startPoint = getFunctionByName("MAIN");
+        int totalExtracted = totalExtractedFunctionCalls();
 
+        Function startPoint = getFunctionByName("MAIN");
+        int totalCalls = 0;
         while (startPoint.hasCalledFunctions()){
             ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
             while (startCalledFuncs.size() > 0){
@@ -948,6 +966,10 @@ class Evaluater{
                 String newBody = actualCalledFunction.replaceParam(bodyOfCalledFunction); // calling this function replacing the paramter with whatever needs replacing
                 startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
                 startCalledFuncs = startPoint.extractCalledFunctions();
+                totalCalls ++;
+                if (totalCalls > totalExtracted)
+                    return "DIVERGENCE";
+
             }
         }
         return startPoint.getBody();

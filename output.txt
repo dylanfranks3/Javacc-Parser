@@ -1,8 +1,1 @@
-PASS
-770
-
-
-MAIN => PP => QQ => PP
-                 => FOO
-
- PLM is divergent iff the total no. extracted calls < running total calls
+FAIL
