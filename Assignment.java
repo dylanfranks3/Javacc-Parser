@@ -529,16 +529,16 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3R_GF_543_5_4()
+  static private boolean jj_3_1()
  {
-    if (jj_scan_token(SPACE)) return true;
-    if (jj_scan_token(PARAM)) return true;
+    if (jj_3R_GF_549_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3_1()
+  static private boolean jj_3R_GF_549_5_4()
  {
-    if (jj_3R_GF_543_5_4()) return true;
+    if (jj_scan_token(SPACE)) return true;
+    if (jj_scan_token(PARAM)) return true;
     return false;
   }
 
@@ -896,8 +896,10 @@ class Evaluater{
         diverges = diverges;
     }
 
-    public boolean checkIfDiverges() throws ParseException{
+    public boolean checkIfDiverges() throws CustomErrorMessage{
+
         for (Function f: functions){
+            ArrayList<String> allCalledFunctions;
             System.out.println("please do me");
             //TODO
         }
@@ -939,12 +941,15 @@ class Evaluater{
 
         while (startPoint.hasCalledFunctions()){
             ArrayList<String> startCalledFuncs = startPoint.extractCalledFunctions();
-            for (String cF : startCalledFuncs){
-                String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(cF, startPoint.getBody()); // the body of the called function, the parameter to the function 
-                String entireInternalFuncCall = cF + "(" + bodyOfCalledFunction + ")"; // entire call of the function
-                Function actualCalledFunction = getFunctionByName(cF); // getting the actual object of the function
+
+            while (startCalledFuncs.size() > 0){
+                String firstCF = startCalledFuncs.get(0);
+                String bodyOfCalledFunction = startPoint.getBodyOfCalledFunction(firstCF, startPoint.getBody()); // the body of the called function, the parameter to the function 
+                String entireInternalFuncCall = firstCF + "(" + bodyOfCalledFunction + ")"; // entire call of the function
+                Function actualCalledFunction = getFunctionByName(firstCF); // getting the actual object of the function
                 String newBody = actualCalledFunction.replaceParam(bodyOfCalledFunction); // calling this function replacing the paramter with whatever needs replacing
                 startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
+                startCalledFuncs = startPoint.extractCalledFunctions();
             }
         }
 
@@ -1019,6 +1024,7 @@ class Function {
         int bodyStart = bodyToFunc.indexOf(givenCalledFunction) + givenCalledFunction.length() + 1;
         int index = bodyStart;
 
+
         while (leftBracket != rightBracket){
             if (Character.toString(bodyToFunc.charAt(index)).equals("("))
                 leftBracket++;
@@ -1027,7 +1033,7 @@ class Function {
 
             index ++;
         }
-
+        //System.out.println(givenCalledFunction + " " + bodyToFunc + " " + bodyToFunc.substring(bodyStart,index-1));
         return bodyToFunc.substring(bodyStart,index-1);
     }
 

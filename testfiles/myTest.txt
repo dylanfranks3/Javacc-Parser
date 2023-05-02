@@ -1,2 +1,2 @@
 DEF MAIN { 5*ADDFOUR(ADDFOUR(1)) } ;
-DEF ADDFOUR x { x+4 } ;
+DEF ADDFOUR x { 4 } ;
