@@ -1,2 +1,0 @@
-Function (ADDFOUR) is defined more than one
-2

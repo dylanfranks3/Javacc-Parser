@@ -4,17 +4,11 @@ import java.util.*; //library import
 import java.io.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-
 
 public class Assignment implements AssignmentConstants {
     private static boolean mainDefined = false; //checking whether there is a main function, to make sure only defined once, and importantly defined
-
-    public static void main(String[] args) throws ParseException, TokenMgrError, ScriptException {
+    public static void main(String[] args) throws ParseException, TokenMgrError {
             try{
-                // TODO check if the same function has been defined twice
                 Scanner in = new Scanner(System.in);
                 String s = "";
                 ArrayList<String> eachLine = new ArrayList<String>(); // for evaluating the functions later
@@ -28,16 +22,15 @@ public class Assignment implements AssignmentConstants {
                 Assignment parser = new Assignment(is); // give whatever is inputted to the parser
                 parser.Start(); // start the grammer checking
 
-
                 // now the evaluation
-                int count = 1;
+                int count = 1; // which line the function deifinition is on
                 Evaluater assigmentEval = new Evaluater();
                 for (String i : eachLine){
                     String line = i.substring(4); // cutting out the def from each line
                     assigmentEval.addFunctionFromString(line, count);
                     count ++;}
 
-                String decomposedIntoFunctions = assigmentEval.startEvalauting();
+                String decomposedIntoFunctions = assigmentEval.startEvalauting(); // this drives the evalution, follow the chain of calls to really understand whatgoes on down there
 
                 if (decomposedIntoFunctions.equals("DIVERGENCE")){
                     System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
@@ -48,7 +41,6 @@ public class Assignment implements AssignmentConstants {
                     System.out.println("PASS"); // if theres no error, woohoo, output PASS, otherwise error gets thrown
                     System.out.println(result);
                 }
-
             }
 
             catch (Throwable t){
@@ -71,7 +63,6 @@ public class Assignment implements AssignmentConstants {
                     if (matcher.find())
                         lineNo = Integer.parseInt(matcher.group().replace("line ", ""));
 
-
                     errorMessage = e.toString();
                 }
 
@@ -80,15 +71,8 @@ public class Assignment implements AssignmentConstants {
                     lineNo = e.getLine(); // custom class method
                 }
 
-                catch(ScriptException e){
-                    errorMessage = "Divergent function call";
-                    lineNo = 0;
-                }
-
-
                 System.err.println(errorMessage);
                 System.err.println(lineNo);
-
             // Catching Throwable is ugly but JavaCC throws Error objects!
             }
     }
@@ -220,7 +204,6 @@ public class Assignment implements AssignmentConstants {
             return "Unknown string: " + str;
     }
 
-
     private static int doOperations(String equation){
         String prevEq = equation;
         String newEq = equation;
@@ -237,8 +220,6 @@ public class Assignment implements AssignmentConstants {
         }
 
        return (Integer.parseInt(newEq));
-
-
     }
 
     public static String removeSingleBrackets(String body){
@@ -251,7 +232,6 @@ public class Assignment implements AssignmentConstants {
             String thisNum = num.substring(1,num.length()-1);
             body = body.replace(num,thisNum);
         }
-
         return body;
     }
 
@@ -535,16 +515,16 @@ if (!mainDefined) {
     finally { jj_save(0, xla); }
   }
 
-  static private boolean jj_3R_GF_566_5_4()
+  static private boolean jj_3_1()
  {
-    if (jj_scan_token(SPACE)) return true;
-    if (jj_scan_token(PARAM)) return true;
+    if (jj_3R_GF_528_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3_1()
+  static private boolean jj_3R_GF_528_5_4()
  {
-    if (jj_3R_GF_566_5_4()) return true;
+    if (jj_scan_token(SPACE)) return true;
+    if (jj_scan_token(PARAM)) return true;
     return false;
   }
 
@@ -902,8 +882,6 @@ class Evaluater{
         diverges = diverges;
     }
 
-
-
     public void checkValidFunctions() throws CustomErrorMessage{ // check if any functions call inexistent functions or function is defined teice
         ArrayList<String> functionNames = new ArrayList<String>();
         for (Function f : functions){
@@ -919,8 +897,6 @@ class Evaluater{
             }
             functionNames.add(i,fName);
         }
-
-
 
         for (Function f : functions){ // go through each defined functions and extract the called functions and check them against the defined ones in functionNames
             ArrayList<String> thisCalledFuncs = f.getCalledFunc();
@@ -942,7 +918,7 @@ class Evaluater{
         throw new CustomErrorMessage("no function called this",0);
     }
 
-    public int totalExtractedFunctionCalls(){
+    public int totalExtractedFunctionCalls(){ // gets the number of extracted functions to check divergence
         int total = 0;
         for (Function f : functions){
             total += f.extractCalledFunctions().size();
@@ -950,7 +926,7 @@ class Evaluater{
         return total;
     }
 
-    public String startEvalauting() throws ParseException, CustomErrorMessage, ScriptException{
+    public String startEvalauting() throws ParseException, CustomErrorMessage{
         checkValidFunctions(); // check if any functions call inexistent functions, if not throw error
         int totalExtracted = totalExtractedFunctionCalls();
 
@@ -968,8 +944,7 @@ class Evaluater{
                 startCalledFuncs = startPoint.extractCalledFunctions();
                 totalCalls ++;
                 if (totalCalls > totalExtracted)
-                    return "DIVERGENCE";
-
+                    return "DIVERGENCE"; // PLM is divergent iff the total no. extracted calls < running total calls
             }
         }
         return startPoint.getBody();
@@ -996,8 +971,6 @@ class Evaluater{
         matcher = Pattern.compile("[a-z]+").matcher(func);
         if (matcher.find()){
             namedParam = matcher.group();}
-
-     //   System.out.println("\nname: " + name + "\nbody: " + body + "\nnamedparam: " + namedParam);
 
         Function newFunc = new Function(name, body, namedParam, lineNo); // initialising the object
         functions.add(newFunc); // add the new formed function
@@ -1078,7 +1051,6 @@ class Function {
     public String replaceFuncCall(String original, String replacer){
         return body.replace(original,replacer);
     }
-
     // getter functions
     public String getName(){return name;}
 
@@ -1091,9 +1063,7 @@ class Function {
     public ArrayList<String> getCalledFunc(){return calledFunctions;}
 
     public void updateBody(String newBody){body = newBody;}
-
 }
-
 
 class CustomErrorMessage extends Throwable {
     private String message;
@@ -1104,7 +1074,6 @@ class CustomErrorMessage extends Throwable {
         message =  givenMessage;
         line =  givenLine;
     }
-
 
     public String getMessage() {
         return message;
