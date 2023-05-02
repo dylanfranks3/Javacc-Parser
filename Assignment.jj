@@ -199,7 +199,10 @@ public class Assignment {
             }
 
             if (expected.contains(SPACE) && expected.size() == 1)
-                return "Expecting a space by string: " + str; 
+                return "Expecting a space by string: " + str;
+
+            if (str.equals(" MAIN"))
+                return "Cannot call the MAIN function in this context";
             // final error classification if nothing has been caught 
             return "Unknown string: " + str;
     }

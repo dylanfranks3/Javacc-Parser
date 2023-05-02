@@ -200,6 +200,9 @@ public class Assignment implements AssignmentConstants {
 
             if (expected.contains(SPACE) && expected.size() == 1)
                 return "Expecting a space by string: " + str;
+
+            if (str.equals(" MAIN"))
+                return "Cannot call the MAIN function in this context";
             // final error classification if nothing has been caught 
             return "Unknown string: " + str;
     }
@@ -515,11 +518,11 @@ if (!mainDefined) {
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_GF_523_5_4()) return true;
+    if (jj_3R_GF_526_5_4()) return true;
     return false;
   }
 
-  static private boolean jj_3R_GF_523_5_4()
+  static private boolean jj_3R_GF_526_5_4()
  {
     if (jj_scan_token(SPACE)) return true;
     if (jj_scan_token(PARAM)) return true;
@@ -940,7 +943,7 @@ class Evaluater{
                 startPoint.updateBody(startPoint.getBody().replace(entireInternalFuncCall,"(" + newBody + ")")); // replacing the old body with the new decomposed one
                 startCalledFuncs = startPoint.extractCalledFunctions();
                 totalCalls ++;
-                if (totalCalls > totalExtracted + 20)
+                if (totalCalls > totalExtracted + 20) //20 just to be sure
                     return "DIVERGENCE"; // PLM is divergent iff the total no. extracted calls < running total calls
             }
         }
